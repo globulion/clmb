@@ -12,7 +12,14 @@
 
 # ----------------------------------------------------------------------------------------------
 
-from coulomb_head import *
+#---------------------------------
+import re, os, sys, getopt, random
+from time import time
+from sys  import argv, exit
+from work   import *
+from util import *
+#-----------------------
+
 
 # ----------------- #
 #    MAIN ROUTINE   #

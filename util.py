@@ -30,12 +30,18 @@
 #               U T I L I T I E S              #
 # -------------------------------------------- #
 
-from coulomb_head import *
+#---------------------------------
+from numpy import *
+#---------------------------------
+import re, os, sys, random
+from time import time
+from sys  import argv, exit
+#---------------------------------
 
 __author__  = "Bartosz Błasiak & Robert W. Góra"
 __version__ = "1.0"
 
-__all__=['read_transition_dmatrix','TIMER']
+__all__=['read_transition_dmatrix','TIMER','Usage','Version']
 
 def Error():
     """Error box""" 

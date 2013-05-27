@@ -4,8 +4,21 @@
 #           INTERACTION ENERGY DECOMPOSITION SCHEME           #
 # ----------------------------------------------------------- #
 
-from coulomb_head import *
-from units        import *
+#---------------------------------
+from numpy import *
+#---------------------------------
+import re, os, sys, getopt, random
+from time import time
+from sys  import argv, exit
+#------------------------------------------------------------------------
+from PyQuante.Molecule import Molecule
+from PyQuante          import SCF
+from PyQuante.Ints     import getbasis, getS, getM, getJ, getK, sortints
+from PyQuante.cints    import ijkl2intindexBTF as intindexBTF
+from PyQuante.CGBF     import coulomb
+#-----------------------
+from units import *
+# ----------------------
 
 __all__=['EELEDS']
 

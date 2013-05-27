@@ -2,7 +2,23 @@
 #         MULTIPOLE DISTRIBUTION MODULE       #
 # ------------------------------------------- #
 
-from coulomb_head import *
+#---------------------------------
+from numpy import *
+from numpy.linalg import svd
+#---------------------------------
+import re, os, sys, getopt, random
+from time import time
+from sys  import argv, exit
+#------------------------------------------------------------------------
+from PyQuante.Molecule import Molecule
+from PyQuante          import SCF
+from PyQuante.Ints     import getbasis, getS, getM, getJ, getK, sortints
+from PyQuante.cints    import ijkl2intindexBTF as intindexBTF
+from PyQuante.CGBF     import coulomb
+#------------------------------------------------------------------------
+from utilities import *
+from util import read_transition_dmatrix
+# ---------------------
 
 __all__=['PARSER']
 

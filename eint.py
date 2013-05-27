@@ -3,6 +3,7 @@
 # --------------------------------------------------- #
 
 from units        import *
+from numpy import *
 
 __all__=['Eeldc','EelESP','Eelcamm']
 

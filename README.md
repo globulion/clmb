@@ -17,3 +17,5 @@ The auxiliary methods implemented are:
 
 1) ESP - charges from fitting to the electrostatic potential
 2) CAMM - Cumulative Atomic Multipole Moments
+
+The tutorial is under preparation. 

@@ -18,3 +18,14 @@ The auxiliary methods implemented are:
 * `CAMM` - Cumulative Atomic Multipole Moments.
 
 The tutorial is under preparation. 
+
+### Installation ###
+
+Installation prerequisites:
+- PyQuante modified version (soon the link will be uploaded)
+- LibInt 1.1.4
+
+To install the Coulomb package type the following commands:
+```
+sudo python setup.py install
+```

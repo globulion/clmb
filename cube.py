@@ -19,6 +19,7 @@ class CUBFLE:
           self.n_x, self.n_y, self.n_z  = self.dimension
           
       def read_inst():
+          """?"""
           pass
         
       def read_basic(self,file):

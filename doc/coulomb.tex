@@ -1,0 +1,1086 @@
+% TITLE 
+%=======================================================
+\documentclass[a4paper,titlepage,twoside,fleqn]{article}
+%=======================================================
+\usepackage[english]{babel}
+\usepackage[latin2]{inputenc}
+\usepackage{lscape}
+\usepackage{rotating}
+%---------------------------------------------------
+% MATH
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dcolumn}
+\usepackage{booktabs}
+\usepackage{mathrsfs}
+
+%---------------------------------------------------
+% GRAPHICX
+%\usepackage[dvi-ps]{graphicx}
+\usepackage{wrapfig}
+
+%---------------------------------------------------
+% BIBLIOGRAPHY
+\usepackage{natbib}
+
+%---------------------------------------------------
+% PAGE FORMATING
+\addtolength{\hoffset}{-1cm}
+\addtolength{\textwidth}{2cm}
+\usepackage{setspace}
+\usepackage{textpos}
+\usepackage{color}
+
+%---------------------------------------------------
+% SHORTCUTS
+\newcolumntype{,}{D{.}{,}{2}}
+\newcommand{\citee}[1]{\ensuremath{\scriptsize^{\citenum{#1}}}}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+% Quantum notation
+\newcommand{\bra}[1]{\ensuremath{\bigl\langle {#1} \bigl\lvert}}
+\newcommand{\ket}[1]{\ensuremath{\bigr\rvert {#1} \bigr\rangle}}
+\newcommand{\braket}[2]{\ensuremath{\bigl\langle {#1} \bigl\lvert {#2} \bigr\rangle}}
+\newcommand{\tbraket}[3]{\ensuremath{\bigl\langle {#1} \bigl\lvert {#2} \bigl\lvert {#3} \bigr\rangle}}
+% Math
+\newcommand{\pd}{\ensuremath{\partial}}
+\newcommand{\DR}{\ensuremath{{\rm d} {\bf r}}}
+\newcommand{\BM}[1]{\ensuremath{\mbox{\boldmath${#1}$}}}
+% Chemistry (formulas)
+\newcommand{\ch}[2]{\ensuremath{\mathrm{#1}_{#2}}}
+% Math 
+\newcommand{\VEC}[1]{\ensuremath{\mathrm{\mathbf{#1}}}}
+%--------------------------------------------------------------------------------------------------
+\begin{document}
+
+\begin{center}
+\rule{1cm}{1cm}
+\hfill
+\rm \Large COULOMB.py $^\copyright$ 2012 
+\end{center}
+\rule{14cm}{1mm}
+% Author and supervisor
+\begin{textblock}{5.0}(0,0.2)
+\begin{minipage}{1.0\textwidth}
+\begin{flushleft} %\large
+\textbf{Author:} \newline
+Bartosz \textsc{B{\l}asiak} \newline
+Wroc{\l}aw University of Technology \newline
+\verb+globula@o2.pl+
+\end{flushleft}
+\end{minipage}
+\end{textblock}
+
+\begin{textblock}{3.0}(7,0.2)
+\begin{minipage}{1.0\textwidth}
+\begin{flushleft} %\large
+\textbf{Licence:} \newline
+Free useage.
+\end{flushleft}
+\end{minipage}
+\end{textblock}
+\hfill\vspace{2 cm}
+\rule{14cm}{0.2mm}
+
+\tableofcontents
+\clearpage
+%\vspace{2 cm}
+\section{Introduction}
+%
+This simple program is designed for calculation of coulomb 
+interaction energies between two molecular individuals
+in terms of \emph{ab initio} quantum mechanical methods 
+at various levels of approximation. It serves the calculations
+using the following procedures listed:
+%
+\begin{enumerate}
+   \item Cube Method
+   \item Multipole Interaction Energy from 
+         Cumulative Atomic Multipole Moments Method (CAMM)
+   \item Charge Interaction from Electrostatic Potential 
+         Fitting Method (ESP)
+   \item First-order electrostatic interaction energy from 
+         Hybrid Variational-Perturbtional Interaction Energy
+         Decomposition Scheme (EL(1) EDS)
+\end{enumerate}
+%
+The {\sc COULOMB.py} package also provides an opportunity to
+calculate coulomb transition energy couplings basing on external 
+density matrices loaded from {\rm Gaussian} output files. 
+
+The following tutorial is divided into three main sections (apart from this introduction).
+In the first the overall program structure is described. The detailed
+description of classes and functions is provided along with the further 
+explanation of input file syntax which is very simple. Second section
+is devoted to rather very short and dirty introduction or summary\footnote{for 
+those who are familiar with the subject} of the basic concepts of evaluation 
+of coulomb interaction energy using different aproaches. This section is 
+also a listing of what is actually implemented in current version of {\rm COULOMB.py}
+and what is not. The last part is an appendix containing the review of auxiliary methods
+which are important tools for evaluation of electrostatic interaction energy. 
+
+\section{Installation and program structure}
+
+The program uses modified version of PyQuante suite written in Python as
+well as external library for evaluation of two-electron integrals. The
+installation processes are the same as in the case of original packages.
+Probably to install the modified version of PyQuante you have to simply type
+the following command:
+\begin{verbatim}
+sudo python setup.py install
+\end{verbatim}
+
+The program is divided into several files:
+\begin{itemize}
+\item[\verb+coulomb.py+] contains main function \verb+Main(argv)+ with command 
+     line parser
+\item[\verb+do.py+] contains the task selection routines in class \verb+DO(PARSER)+ 
+\item[\verb+parser.py+] contain a parser \verb+PARSER+ for input files
+\item[\verb+run.py+] contains class \verb+RUN+ which is a base class for other classes
+     representing methods like \verb+ESP+ and \verb+MULTIP+. \verb+RUN+ represents
+     the basic variables that are needed to perform other calculations for one
+     molecular system (thus it gathers molecular data, multipole integrals and density 
+     matrix). More detailed description of this class is given in the text below.
+\item[\verb+esp.py+] contains all procedures for performing ESP fitting
+\item[\verb+multip.py+] contains all procedures needed for obtaining multipolar 
+     distributions of molecular species (either MMM or CAMM -see below).
+\item[\verb+eeleds.py+] contains all the procedures for calculations of electrostatic
+     interaction energy in 1-st order from EDS. This class does not inherit from \verb+RUN+.
+\item[\verb+util.py+] contains some utility functions. The most important is 
+     \verb+read_transition_dmatrix+. Others are timing processing utility \verb+TIMER+,
+     and print helpers.
+\end{itemize}
+
+\subsection{Main classes}
+
+The most important classes are described below:
+
+\subsubsection{PARSER}
+This object contains some defaults which are assumed at the very begining
+during the input file reading. The defaults are for e.g. Angstroms as units
+for structure input and density matrix file type format (Gaussian) in case
+the user would provided an external source of this matrix. It contains also
+\verb+self.transition=False+ as well as \verb+state=1+. The method \verb+method+
+withdraws the following: method (like HF - in the case then the density matrix
+has to be calculated by using PyQuante routines so without providing external
+density matrix file), basis set and other keywords: \verb+trans+, \verb+units=[unit]+, 
+\verb+mpoints=[no of points per atom for ESP]+, \verb+eint=[method(s)]+, \verb+mtp=[method(s)]+,
+\verb+pot=[method]+, \verb+pad=number+ and \verb+print+. Method and basis set are 
+provided in the input file similarly as in Gaussian input files (see section \ref{sec:inp}).
+Method \verb+molecules+ withdraws molecular coodrinates, multiplicity, charge 
+and (optionally) density matrix. It looks for keywords \verb+&MOL+, \verb+DMATRIX=[file]+
+and molecular data. The constructor takes only the input file as a path.
+
+\subsubsection{DO(PARSER)}
+The obcject of this class has to find out that tasks to perform
+and to run appropriate routines. \verb+self.mtp_methods+ 
+contains the list of multipole distribution tasks. Available are the two:
+Molecular Multipole Moments distribution, MMMs and Cumulative Atomic
+Multipole Moments, CAMMs. \verb+self.eint_methods+ contains the lsit
+of interaction energy calculation tasks. Available within this kind are
+interaction energy from CAMMs, ESP and EEL(1)EDS. Important information
+is that the \verb+PARSER+ stores finally a \verb+Molecule+ object from 
+PyQuante routines (see class \verb+Molecule+ in file of PyQuante package)
+and lists of density external matrices. The constructor takes only the input 
+file as a path.
+
+\subsubsection{RUN}
+This class contains memorials for molecular and method specific data.
+The constructor takes \verb+molecule,basis,method,matrix=0,multInts=0+. 
+If multints is set to zero the class \verb+RUN+ calculates density matrix 
+(at HF level only) using PyQuante routines. 
+
+\subsubsection{ESP(RUN)}
+Constructour takes the arguments:
+\begin{verbatim}
+def __init__(self, molecule, basis, method, mpot=1000, pot='CAMM', pad=10, 
+                   SVD=False, matrix=None, multInts=None, cnt=0.0100, 
+                   stat=False, Print=True, transition=False):
+    RUN.__init__(self, molecule, basis, method, matrix, multInts)
+    ...
+\end{verbatim}
+The meaning of these arguments is as follows: \verb+mpot+ is a number 
+of points \emph{per atom} in which the potential has to be evaluated.
+The algorithm uses {\bf random point selection}. \verb+pot+ specifies
+the method which potential will be evaluated from. It can be \verb+CAMM+
+or \verb+WFN+ (wavefunction). \verb+pad+ is a box padding given in Bohrs,
+in which the points will be created. The centre of the box is assumed to 
+be the geometrical centre of of the molecule given in \verb+molecule+.
+\verb+cnt+ denotes condition number threshold being the limit number for
+assessing the real order of distance matrix (the analysis will be performed
+when \verb+SVD=True+ only\footnote{{\color{red}not yet written!}}). 
+\verb+Print+ statement says if the fitted charges are to be printed out
+and \verb+transition+ is to specify if we calculate the transition potential
+from transition density matrices (then nuclear contributions to the potential
+are zero).
+
+\subsubsection{MULTIP(RUN)}
+Constructeur takes the arguments:
+\begin{verbatim}
+def __init__(self, molecule, basis, method,matrix=None,multInts=None,
+                   transition=False):
+    RUN.__init__(self, molecule, basis, method,matrix,multInts)
+    ...
+\end{verbatim} 
+The arguments are the same as in \verb+RUN+ class and one additional 
+\verb+transition+ has exactly the same meaning as above described 
+\verb+ESP+ class. For the purpose of the calculations for this class
+several small modifications were made in original PyQuante suite. One of this
+is adding multipole integrals formation (\verb+getM+ procedure) and 
+adding a memorial \verb+LIST1+ to instances of \verb+bfs+ class which
+indicates the number of atom as a function of atomic orbital and is 
+an object of type \verb+list+ implemented in Python. For example
+\begin{verbatim}
+      LIST1 - the list of atoms in the order of basis functions used, 
+      e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis 
+      LIST1 = 0    0    0    0    0    1    2
+              |    |    |    |    |    |    |
+             1s   2s   2px  2py  2pz  1s   1s
+\end{verbatim}
+The numbers as atomic indices are maintained in Python's convention
+for labeling list, array and string elements from \verb+0+ value.
+\verb+LIST1+ memorial is needed when evaluating of CAMMs (see section \ref{sec:aux}). 
+
+\subsubsection{EELEDS}
+The constructor takes the arguments as follows:
+\begin{verbatim}
+   def __init__(self,molecule1,molecule2,basis,method,
+                Transition=False,Exchange=False,
+                matrixa=None,matrixb=None):
+       ...
+\end{verbatim}
+Statements \verb+molecule1+ and \verb+molecule2+ refer to two molecules, 
+for which EEL(1)EDS will be calculated. \verb+Transition+ has the same meaning
+as previously. \verb+Exchange+ means exchange term from $\mathscr{K}_{i_1j_1k_2l_2}$ 
+integrals. \verb+matrixa+ and \verb+mtrixb+ (optional) are externam density matrices
+calculated in DCBS respectively for monomers \verb+molecule1+ and \verb+molecule2+.
+
+\subsection{Input file syntax\label{sec:inp}}
+
+In the input file one can provide more than one molecules to calculate
+multipole distributions. If one can obtain interction energy the only
+one amount of molecules given is two. The input file philosophy is similar
+for Gaussian and Molcas in order to make it more easy to handle. Beneath,
+an examplary input file is depicted. 
+\begin{figure}
+\begin{verbatim}
+# CIS/6-31G* EINT=CAMM,ESP  TRANS mpoints=3200
+
+&MOL1
+ETHYLENE 1
+DMATRIX=e1.cis-6-31Gd.log
+
+0 1
+C     -0.031871   -0.000007    0.001312
+H     -0.053949   -0.102551    1.069139
+C      1.188324    0.000003   -0.695389
+H     -0.962724   -0.100044   -0.523396
+H      1.209504   -0.099215   -1.763690
+H      2.119240   -0.102685   -0.171502
+
+&MOL
+ETHYLENE 2 
+DMATRIX=e2.cis-6-31Gd.log
+
+0 1
+C     -0.031871    3.000007    0.001312
+H     -0.053949    3.102551    1.069139
+C      1.188324    2.999997   -0.695389
+H     -0.962724    3.100044   -0.523396
+H      1.209504    3.099215   -1.763690
+H      2.119240    3.102685   -0.171502
+
+&END
+
+\end{verbatim}
+\caption{Input file for coulomb coupling constant evaluation
+         for ethylene dimer obtained at CIS/6-31G* level of theory
+         and using two methods: CAMM and ESP. Number of points
+         per atom is set to 3200. Density matrices are provided
+         for each the monomer. Units are assumed to be in Angstroms 
+         (default).}
+\end{figure}
+There are two parts of input file: methods etc in the form:
+\begin{verbatim}
+# [method]/[basis set] other commands 
+\end{verbatim}
+There cannot be any white character in the fragment \verb+[method]/[basis set]+.
+Commands are as follows:
+\begin{itemize}
+\item \verb+MTP=[method1],[method2],...+ where methods are 
+      \verb+CAMM+ and \verb+MMM+. Examples are \verb+MTP=MMM+ 
+      or \verb+MTP=CAMM,MMM+.
+\item \verb+EINT=[method1],[method2],...+ similarly like above. 
+      Available methods are \verb+MTP=ESP+, \verb+MTP=CAMM+ and
+      \verb+MTP=EELEDS+. Example \verb+MTP=CAMM,ESP,EELEDS+ 
+      will compute interaction energy using three methods for 
+      the same pair of molecules. {\color{red}IMPORTANT! I didn't
+      finished this part so for now the program will be calculatining
+      molecular specific variables each time for each method separately
+      so it is not so good (e.g. calculates multipole integrals twice 
+      for ESP (if potential has to be calculated from CAMM) and CAMM. 
+      I will solve this problem soon. I wanted to make class \verb++}
+\item \verb+MPOINTS=[integer]+ specifies the number of point per atom
+\item \verb+PAD=[real]+ specifies molecular box padding for random 
+      points generation
+\item \verb+TRANS+ sets transition to be true (requires external 
+      transition density matrix - see below)
+\item \verb+EXCH+ sets exchange in EELEDS method for interaction
+      energy computation
+\item \verb+UNITS=[unit]+ specifies units. Available are Angstroms 
+      (default) and Bohrs. 
+\end{itemize}
+
+The second part of the input file specifies molecule(s)
+and has the form:
+\begin{verbatim}
+&MOL
+[molecule name]
+DMATRIX=[file with density matrix]
+
+[charge] [multiplicity]
+[atom_1]  [x] [y] [z]
+[atom_2]  [x] [y] [z]
+...
+[atom_n]  [x] [y] [z]
+
+/other molecules starting with new &MOL statement!/
+
+&END
+\end{verbatim}
+The line containing \verb+DMATRIX=+ is of course optional. 
+All the input querries are {\rm case insensitive}.  
+
+In order to use {\sc COULOMB.py} one has to simply load the input
+file in the following way:
+\begin{verbatim}
+coulomb.py [input_file]
+\end{verbatim}
+After this computations start.
+
+\section{Long-range Interaction energy calculations\label{sec:eint}}
+\subsection*{Starting from operators}
+To derive working formulas for interaction energy calculations
+one has to specify first the Hamiltonian $\mathscr{H}_{\rm int}$ operator of interaction
+between charge distributions of interest. In principle, these 
+interactions are \emph{electrostatic} between all particles in the 
+system, i.e. electrons and protons from nuclei. Since the interaction
+comes from electrostatics the exact Hamiltonian is pairwise additive
+and one can concentrate on the interaction between two molecules, A 
+and B. It is important to remark here that this section is devoted to 
+treating long-range intermolecular interactions (i.e. without taking 
+into account overlap and exchange-repulsion effects explicitly). The 
+resulting interaction Hamiltonian can be drawn as follows: 
+\begin{equation}
+\mathscr{H}_{\rm int} = \mathscr{H}_{\rm int}^{\rm nuc} + \mathscr{H}_{\rm int}^{\rm el-nuc} + \mathscr{H}_{\rm int}^{\rm el} \; ,
+\end{equation}
+where:
+\begin{eqnarray}
+\mathscr{H}_{\rm int}^{\rm nuc}    &=&   \sum_{\alpha \in {\rm A}} \sum_{\beta \in {\rm B}} \frac{Z_{\alpha}Z_{\beta}}{r_{\alpha\beta}} \\
+\mathscr{H}_{\rm int}^{\rm el-nuc} &=& - \sum_{\alpha \in {\rm A}} \sum_{j \in {\rm B}} \frac{Z_{\alpha}}{r_{\alpha j}}
+                                       - \sum_{\beta  \in {\rm B}} \sum_{i \in {\rm A}} \frac{Z_{\beta }}{r_{\beta  i}} \\
+\mathscr{H}_{\rm int}^{\rm el}     &=& \sum_{i  \in {\rm A}} \sum_{j \in {\rm B}} \frac{1}{r_{ij}} 
+\end{eqnarray}
+In the above notation greek subscripts denote nuclei 
+whereas latin subscripts distinguish electrons.
+An alternative but very useful form of $\mathscr{H}_{\rm int}$ can be 
+achieved using a charge density operator of molecule A, $\hat{\rho}^{\rm A}$
+which is defined as:
+\begin{equation}\label{e:chd}
+\hat{\rho}^{\rm A}(\VEC{r}) = \sum_{a \in {\rm A}} e_a \delta(\VEC{r}-\VEC{a}) \; , 
+\end{equation}
+where the summation extends over all the particles (nuclei and electrons).
+Using \ref{e:chd} and integrating out nuclear charge densities\footnote{we use Born-Oppenheimer approximation} 
+the respective interaction Hamiltonian terms can be written 
+as follows:
+\begin{eqnarray}\label{e:rho}
+\mathscr{H}_{\rm int}^{\rm nuc}    &=&   \sum_{\alpha \in {\rm A}} \sum_{\beta \in {\rm B}} \frac{Z_{\alpha}Z_{\beta}}{r_{\alpha\beta}} \\
+\mathscr{H}_{\rm int}^{\rm el-nuc} &=& - \sum_{\alpha \in {\rm A}} Z_{\alpha} \int \frac{\hat{\rho}^{\rm B}(\VEC{r}_j)}{r_{\alpha j}} {\rm d}\VEC{r}_j
+                                       - \sum_{\beta  \in {\rm B}} Z_{\beta}  \int \frac{\hat{\rho}^{\rm A}(\VEC{r}_i)}{r_{\beta  i}} {\rm d}\VEC{r}_i \\
+\mathscr{H}_{\rm int}^{\rm el}     &=& \iint \frac{\hat{\rho}^{\rm A}(\VEC{r}_i)\hat{\rho}^{\rm B}(\VEC{r}_j)}{r_{ij}} 
+                                       {\rm d}\VEC{r}_j {\rm d}\VEC{r}_i \quad (i\in A \;{\rm and}\;  j\in B)\; ,
+\end{eqnarray} 
+where $\hat{\rho}^{\rm A}(\VEC{r}_i)$ are in this case only electron 
+charge density operators.
+
+There is another approach, also sometimes very useful, based on 
+multipole expansion. The interaction Hamiltonian can be written
+in the form:
+\begin{equation}
+\mathscr{H}_{\rm int} = \sum_{a\in {\rm A}} e_a V_{\rm B}(\mathbf a)  = \sum_{b\in {\rm B}} e_b V_{\rm A}(\mathbf b)\; ,
+\end{equation}
+where $V_{\rm X}(\mathbf r)$ is a electrostatic potential in point $\mathbf r$ 
+generated by molecule X. Expanding this potential in Taylor series 
+and applying traceless multipole moments the interaction Hamiltonian
+has the form (up to hexadecapole moments):
+\begin{equation}\label{e:hmult}
+\mathscr{H}_{\rm int} = \hat{q}^B\hat{V}^A + \hat{\mu}^B_a\hat{V}^A_a + \frac{1}{3} \hat{\Theta}^B_{ab} \hat{V}^A_{ab} 
+                + \frac{1}{15} \hat{\Omega}^B_{abc} \hat{V}^A_{abc} 
+                + \frac{1}{105} \hat{\Xi}^B_{abcd} \hat{V}^A_{abcd} \; ,
+\end{equation}
+where potential is expressed by a series of $T$-tensors (interaction tensors):
+\begin{equation}\label{e:potmult}
+\hat{V}^X = \hat{q}^X \hat{T} + \hat{\mu}^X_a\hat{T}_a + \frac{1}{3} \hat{\Theta}^X_{ab}\hat{T}_{ab} 
+                              + \frac{1}{15} \hat{\Omega}^X_{abc} \hat{T}_{abc} 
+                              + \frac{1}{105} \hat{\Xi}^B_{abcd} \hat{T}_{abcd}
+\end{equation}
+and
+\begin{eqnarray}
+\hat{T}              &=& \frac{1}{R} \\
+\hat{T}_{ab\cdots x} &=& \nabla_a\nabla_b\cdots\nabla_x \Big(\frac{1}{R}\Big) 
+\end{eqnarray}
+The potential gradient operators and higher-order derivatives $\hat{V}_{ab\cdots x}$
+are related very simply with the potential operator $\hat{V}$:
+\begin{equation}
+\hat{V}_{ab\cdots x} = \nabla_a\nabla_b\cdots\nabla_x \hat{V} 
+\end{equation}
+Substituting into \ref{e:hmult} the terms of potential and its derivatives
+and keeping in mind that we expand the interaction between A and B
+with respect to ${\mathbf R} = {\mathbf R}_{\rm B} - {\mathbf R}_{\rm A}$
+(so we have to change the sign of the odd-rank $\hat{T}$-tensor operators for the potential in \ref{e:potmult}) 
+we obtain\footnote{we take into account terms up to 4-th rank}:
+\begin{eqnarray}
+\mathscr{H}_{\rm int}^{\rm} 
+&=& \hat{q}^B \big[ 
+                 \hat{q}^A\hat{T} - 
+                 \hat{\mu}^A_a\hat{T}_a + 
+                 \frac{1}{3} \hat{\Theta}^A_{ab}\hat{T}_{ab} -
+                 \frac{1}{15} \hat{\Omega}^A_{abc} \hat{T}_{abc} + 
+                 \frac{1}{105} \hat{\Xi}^A_{abcd} \hat{T}_{abcd} 
+              \big] \\ \nonumber
+&+& \hat{\mu}^B_a \big[  
+                      \hat{q}^A\hat{T}_a - 
+                      \hat{\mu}^A_b\hat{T}_{ab} +  
+                      \frac{1}{3} \hat{\Theta}^A_{bc}\hat{T}_{abc} -  
+                      \frac{1}{15} \hat{\Omega}^A_{bcd} \hat{T}_{abcd} 
+                  \big] \\ \nonumber
+&+& \frac{1}{3}\hat{\Theta}^B_{ab} \big[ 
+                                          \hat{q}^A\hat{T}_{ab} - 
+                                          \hat{\mu}^A_c\hat{T}_{abc} + 
+                                          \frac{1}{3} \hat{\Theta}^A_{cd}\hat{T}_{abcd} 
+                                   \big] \\ \nonumber
+&+& \frac{1}{15}\hat{\Omega}^B_{abc} \big[ 
+                                            \hat{q}^A\hat{T}_{abc} - 
+                                            \hat{\mu}^A_d\hat{T}_{abcd} 
+                                     \big] \\ \nonumber
+&+& \frac{1}{105}\hat{\Xi}^B_{abcd} \big[ 
+                                           \hat{q}^A\hat{T}_{abcd}  
+                                    \big] 
+\end{eqnarray}
+The above experesion can be rearranged into a more convenient form 
+containing respective $\hat{T}$-tensor terms:
+\begin{eqnarray}\label{e:mtp}
+\mathscr{H}_{\rm int}^{\rm} 
+&=& \hat{T} \hat{q}^A \hat{q}^B \\ \nonumber
+&+& \hat{T}_a \big(
+                     \hat{\mu}^B_a \hat{q}^A -
+                     \hat{q}^B \hat{\mu}^A_a 
+              \big) \\ \nonumber
+&+& \hat{T}_{ab} \big( 
+                       \frac{1}{3} \hat{q}^B \hat{\Theta}^A_{ab} + 
+                       \frac{1}{3} \hat{q}^A \hat{\Theta}^B_{ab} - 
+                       \hat{\mu}_b^A \hat{\mu}_a^B 
+                 \big)\\ \nonumber
+&+& \hat{T}_{abc} \big( \frac{1}{3} \hat{\mu}_a^B \hat{\Theta}^A_{bc} - 
+                        \frac{1}{3} \hat{\Theta}^B_{ab} \hat{\mu}_c^A -
+                        \frac{1}{15} \hat{\Omega}^A_{abc} \hat{q}^B +
+                        \frac{1}{15} \hat{\Omega}^B_{abc} \hat{q}^A 
+                   \big)\\ \nonumber
+&+& \hat{T}_{abcd} \big( 
+                        \frac{1}{9} \hat{\Theta}^B_{ab} \hat{\Theta}^A_{cd} - 
+                        \frac{1}{15} \hat{\mu}_a^B \hat{\Omega}^A_{bcd} -
+                        \frac{1}{15} \hat{\Omega}^B_{abc} \hat{\mu}_d^A +
+                        \frac{1}{105} \hat{\Xi}^A_{abcd} \hat{q}^B + 
+                        \frac{1}{105} \hat{q}^A \hat{\Xi}^B_{abcd} 
+                   \big)\\ \nonumber
+&=& \mathscr{A}_0 + \mathscr{A}_1 + \mathscr{A}_2 + \mathscr{A}_3 + \mathscr{A}_4
+\end{eqnarray}
+This Hamiltonian formulation will be used to obtain 
+the working expression by rewriting interaction tensors 
+explicitly in the subsection \ref{s:cammint}.
+
+
+%\subsection*{Variational treatment of intermolecular interactions}
+%The use of variational method is more seldom but it is also used.
+%To calculate interaction energy one can treat the orbitals from
+%interacting molecules variationally by optimization them in the
+%same vector space. Variational calculations can be performed at
+%e.g. Hartree-Fock level in order to obtain density matrix which
+%in turn is used to calculate resulting interaction energy.  
+%The main problem here is the fact that in order to variationally
+%optimize interaction energy one have to perform calculation in
+%joint Hilbert space of molecule A and B which increases the computational
+%cost.
+
+\subsection*{Perturbative treatment of intermolecular interactions}
+To calculate interaction energy one uses perturbation theory 
+due to the fact that intermolecular interaction can be
+regarded as a perturbation of a total Hamiltonian for 
+the two molecular systems, $\mathscr{H}=\mathscr{H}_{\rm A}+\mathscr{H}_{\rm B}+\mathscr{H}_{\rm int}$, 
+where the first two terms accounts for unperturbed Hamiltonians
+of molecules A and B (as if they did not interact) and
+the last term defined as in previous paragraph describing
+the A--B interaction. 
+
+From the Raileygh-Schr{\"o}dinger perturbation theory one can
+calculate the first-order interaction energy which equals:
+\begin{equation}
+E^{(1)}_{\rm int} = \tbraket{\Psi_{\rm A}\Psi_{\rm B}}
+                            {\mathscr{H}_{\rm int}}
+                            {\Psi_{\rm A}\Psi_{\rm B}}
+\end{equation}
+To obtain interaction energy in the first order it has only
+to replace the operators from equations 23--28 by
+their respective expectation values between ground state 
+functions 
+%(because $\tbraket{\Psi_{\rm A}\Psi_{\rm B}}
+%                            {\hat{O}}
+%                            {\Psi_{\rm A}\Psi_{\rm B}}=
+%              \hat{O}\braket{\Psi_{\rm A}\Psi_{\rm B}}
+%                            {\Psi_{\rm A}\Psi_{\rm B}}=O$
+%for any tensor operator $\hat{O}$ in our case).
+In order to calculate higher order corrections the expectation
+values of these tensor operators between functions including 
+also excited states have to be considered. In {\sc COULOMB.py}
+only first-order interaction energies are available at present.
+
+Using derived interaction Hamiltonian operator forms and applying
+perturbation theory to the first order one can obtain working
+formulae for the interaction energy (in the first-order) from 
+Density Cube Method (IE DC), first-order electrostatics from 
+Variational-perturbational Interaction Energy Decomposition 
+Scheme (VP IEDS), Cumulative Atomic Multipole Moments Interaction 
+Energy Decomposition Scheme (CAMM IEDS) and Interaction Energy 
+from Electrostatic Potential Charge Fitting (IE ESP). Beneath, 
+the respective derivations for above mentioned methods are listed.
+
+\subsection{Density Cube Method}
+
+Changing the expectation values of the electron density operators
+from \ref{e:rho} one can obtain the following expression for the
+first-order interaction energy:
+\begin{equation}\label{e:DCM}
+E_{\rm int}^{(1)}= \sum_{\alpha \in {\rm A}} \sum_{\beta \in {\rm B}} \frac{Z_{\alpha}Z_{\beta}}{r_{\alpha\beta}} \\
+                 - \sum_{\alpha \in {\rm A}} Z_{\alpha} \int \frac{\rho^{\rm B}(\VEC{r}_j)}{r_{\alpha j}} {\rm d}\VEC{r}_j
+                 - \sum_{\beta  \in {\rm B}} Z_{\beta}  \int \frac{\rho^{\rm A}(\VEC{r}_i)}{r_{\beta  i}} {\rm d}\VEC{r}_i \\
+                 + \iint \frac{\rho^{\rm A}(\VEC{r}_i)\rho^{\rm B}(\VEC{r}_j)}{r_{ij}} {\rm d}\VEC{r}_j {\rm d}\VEC{r}_i
+\end{equation} 
+This is the concept of Density Cube Method. 
+%Resulting integrals 
+%should be evaluated numerically from \verb+cube+ files of electron 
+%density using trilinear of tricubic quadratures. In {\sc COULOMB.py}
+%only trilinear quadrature is impelemented. 
+In practice one uses \verb+cube+ files of electron density.
+
+It has been shown that the method doesn't work at all when 
+the density cubes overlap. 
+
+\subsection{First-order electrostatics from VP IEDS}
+
+The same equations \ref{e:rho} can be rewritten in terms of
+electron density matrix obtained e.g. HF calculations and
+the optimized orbitals. Electron density in Restricted Hartee-Fock
+(RHF) scheme can be expressed by:
+\begin{equation}\label{e:dmat}
+\rho(\mathbf{r}) = \sum_{\mu\nu} P_{\mu\nu} \phi_{\mu}^{*}(\mathbf{r})  \phi_{\nu}(\mathbf{r})
+\end{equation}   
+Substituting \ref{e:dmat} into the integrals from \ref{e:DCM} 
+which consequently equal:
+\begin{eqnarray}
+-Z_{\iota}\int \frac{\rho^X({\bf r}_i)  }{r_{\iota i}} \;{\rm d}{\bf r}_i 
+&=&
+-Z_{\iota}\int \Big[
+     \sum_{\mu\nu} P^X_{\mu\nu} \phi_{\mu}^{*} \frac{1}{r_{\iota i}} \phi_{\nu} 
+     \Big] \;{\rm d}{\bf r}_i = \\ \nonumber
+&=&
+\sum_{\mu\nu} P^X_{\mu\nu} 
+ \Big[
+ \int -Z_{\iota}\phi_{\mu}^{*} \frac{1}{r_{\iota i}} \phi_{\nu}\;{\rm d}{\bf r}_i
+ \Big] %= \\ \nonumber
+=
+\sum_{\mu\nu} P^X_{\mu\nu} V_{\mu\nu}^{\iota} \\\nonumber 
+&&\textrm{  and}\\
+%
+\iint \frac{\rho^X({\bf r}_i)\rho^Y({\bf r}_j)  }{r_{ij}} \;{\rm d}{\bf r}_i \;{\rm d}{\bf r}_j 
+&=&
+\iint \Big[
+       \sum_{\mu\nu} P^X_{\mu\nu} \phi_{\mu}^{*} \phi_{\nu} 
+       \frac{1}{r_{ij}} 
+       \sum_{\lambda\sigma} P^Y_{\lambda\sigma} \phi_{\lambda}^{*} \phi_{\sigma}
+       \Big] 
+       \;{\rm d}{\bf r}_i \;{\rm d}{\bf r}_j = \\ \nonumber
+&=&
+\sum_{\mu\nu\lambda\sigma} P^X_{\mu\nu} P^Y_{\lambda\sigma} 
+   \Big[
+     \iint \phi_{\mu}^{*} \phi_{\nu} 
+           \frac{1}{r_{ij}} 
+           \phi_{\lambda}^{*} \phi_{\sigma}
+           \;{\rm d}{\bf r}_i \;{\rm d}{\bf r}_j
+   \Big] 
+=
+\sum_{\mu\nu\lambda\sigma} P^X_{\mu\nu} P^Y_{\lambda\sigma}
+(\mu\nu|\lambda\sigma)
+\end{eqnarray}
+we arrive into the final $E_{\rm el}^{(1)}$ expression:
+\begin{equation}\label{e:eeleds}
+E_{\rm el}^{(1)} = 
+\sum_{\alpha \in {\rm A}} \sum_{\beta \in {\rm B}} \frac{Z_{\alpha}Z_{\beta}}{r_{\alpha\beta}} +
+\sum_{\mu\nu\beta} P^A_{\mu\nu} V_{\mu\nu}^{\beta} +
+\sum_{\lambda\sigma\alpha} P^B_{\lambda\sigma} V_{\lambda\sigma}^{\alpha} +
+\sum_{\mu\nu\lambda\sigma} P^A_{\mu\nu} P^B_{\lambda\sigma} (\mu\nu|\lambda\sigma)
+\end{equation} 
+The resulting equation use RHF density matrices for 
+molecules A and B calculated in Dimer Centered Basis Set 
+(DCBS) in order to prevent non-physical effect of Basis 
+Set Superposition Error (BSSE). There are also used 
+nuclear attraction integrals $V_{\mu\nu}^{\beta}$ 
+of electron from one molecule and nuclei from other as
+well as two-electron integrals $(\mu\nu|\lambda\sigma)$.
+All the integrals are used in Atomic Orbital (AO) 
+representation.  
+
+
+\subsection{Multipole part of electrostatic energy from CAMM IEDS\label{s:cammint}}
+
+Substituting multpipole operators by their respective 
+expectation values in \ref{e:mtp} and summing over all
+distributed multipole moments in molecules A and B one 
+obtains:
+\begin{eqnarray}
+E_{\rm int}^{(1)}
+&=& \sum_{\alpha \in {\rm A}} \sum_{\beta \in {\rm B}} \Big[  
+           {T} {q}^{\alpha} {q}^{\beta} \\ \nonumber
+&+& {T}_a \big(
+                     {\mu}^{\beta}_a {q}^{\alpha} -
+                     {q}^{\beta} {\mu}^{\alpha}_a 
+              \big) \\ \nonumber
+&+& {T}_{ab} \big( 
+                       \frac{1}{3} {q}^{\beta} {\Theta}^{\alpha}_{ab} + 
+                       \frac{1}{3} {q}^{\alpha} {\Theta}^{\beta}_{ab} - 
+                       {\mu}_b^{\alpha} {\mu}_a^{\beta} 
+                 \big)\\ \nonumber
+&+& {T}_{abc} \big( \frac{1}{3} {\mu}_a^{\beta} {\Theta}^{\alpha}_{bc} - 
+                        \frac{1}{3} {\Theta}^{\beta}_{ab} {\mu}_c^{\alpha} -
+                        \frac{1}{15} {\Omega}^{\alpha}_{abc} {q}^{\beta} +
+                        \frac{1}{15} {\Omega}^{\beta}_{abc} {q}^{\alpha} 
+                   \big)\\ \nonumber
+&+& {T}_{abcd} \big( 
+                        \frac{1}{9} {\Theta}^{\beta}_{ab} {\Theta}^{\alpha}_{cd} - 
+                        \frac{1}{15} {\mu}_a^{\beta} {\Omega}^{\alpha}_{bcd} -
+                        \frac{1}{15} {\Omega}^{\beta}_{abc} {\mu}_d^{\alpha} +
+                        \frac{1}{105} {\Xi}^{\alpha}_{abcd} {q}^{\beta} + 
+                        \frac{1}{105} {q}^{\alpha} {\Xi}^{\beta}_{abcd} 
+                   \big)  
+ \Big] \\ \nonumber
+&=& \sum_{\alpha \in {\rm A}} \sum_{\beta \in {\rm B}} \Big[ 
+                                                       {A}^{\alpha\beta}_0 + {A}^{\alpha\beta}_1 + 
+                                                       {A}^{\alpha\beta}_2 + {A}^{\alpha\beta}_3 + {A}^{\alpha\beta}_4
+                                                       \Big]
+\end{eqnarray}
+The terms from $A^{\alpha\beta}_0$ to $A^{\alpha\beta}_4$ 
+have to be calculated further by using interaction tensors 
+in their explicit forms:
+\begin{eqnarray}\label{e:T}
+T       &=& \frac{1}{R} \\
+T_a     &=& \nabla_a\frac{1}{R} = -\frac{R_a}{R^3} \\
+T_{ab}  &=& \nabla_a\nabla_b\frac{1}{R} = \frac{3R_aRb-R^2\delta_{ab}}{R^5} \\
+T_{abc} &=& \nabla_a\nabla_b\nabla_c\frac{1}{R} = 
+            \frac{15R_aR_bR_c-3R^2(R_a\delta_{bc}+R_b\delta_{ac}+R_c\delta_{ab})}{R^7} \\
+T_{abcd}&=& \nabla_a\nabla_b\nabla_c\nabla_d\frac{1}{R} =\\ \nonumber
+        &=& \frac{1}{R^9} 
+            \Big[ 105R_aR_bR_cR_d \\ \nonumber
+        & &     - 15R^2(R_aR_b\delta_{cd} + R_aR_c\delta_{bd} + R_aR_d\delta_{bc} +
+                  R_bR_c\delta_{ad} + R_bR_d\delta_{ac} + R_cR_d\delta_{ab}) \\ \nonumber
+        & &     + 3R^4(\delta_{ab}\delta_{cd} + \delta_{ac}\delta_{bd} + \delta_{ad}\delta_{bc}) 
+            \Big]
+\end{eqnarray}
+
+\subsubsection*{$A^{\alpha\beta}_0$ term}
+
+This term describes the interaction between two monopoles
+(charges) and it's very easy:
+\begin{equation}
+A^{\alpha\beta}_0= \frac{q^{\alpha}q^{\beta}}{R} \;, 
+\end{equation}  
+where $R=\big|{\bf R}_{\beta}-{\bf R}_{\alpha}\big|$.
+
+\subsubsection*{$A^{\alpha\beta}_1$ term}
+
+This term describes the interaction between monopole and
+dipole and equals:
+\begin{equation}
+A^{\alpha\beta}_1= -\frac{R_a}{R^3} 
+\Big[ 
+    \mu^B_a q^A -
+    q^B \mu^A_a 
+\Big] = \frac{q^{\beta}{\BM \mu}^{\alpha}{\bf R} - q^{\alpha}{\BM \mu}^{\beta}{\bf R}}   {R^3} 
+\end{equation}  
+
+\subsubsection*{$A^{\alpha\beta}_2$ term}
+
+This term describes the interactions between monopole 
+and quadrupole as well as dipole-dipole interactions:
+\begin{eqnarray}
+A^{\alpha\beta}_2&=& \frac{3R_aR_b-R^2\delta_{ab}}{R^5} 
+\Big[ 
+    \frac{1}{3} {q}^{\beta} {\Theta}^{\alpha}_{ab} + 
+    \frac{1}{3} {q}^{\alpha} {\Theta}^{\beta}_{ab} - 
+    {\mu}_b^{\alpha} {\mu}_a^{\beta}  
+\Big] = \frac{{\BM \mu}^{\alpha}{\BM \mu}^{\beta}}{R^3} - \\ \nonumber
+&-& 
+3\frac{({\bf R}{\BM \mu}^{\alpha})({\bf R}{\BM \mu}^{\beta})}{R^5} +
+\frac{q^{\beta}({\bf R}\otimes_1{\bf\Theta}^{\alpha}{}_2\otimes{\bf R}) + q^{\alpha}({\bf R}\otimes_1{\bf\Theta}^{\beta}{}_2\otimes{\bf R})  }{R^5} 
+\end{eqnarray}  
+
+\subsubsection*{$A^{\alpha\beta}_3$ term}
+
+This term describes the interactions between dipole 
+and quadrupole as well as monopole-octupole interactions
+and equals:
+\begin{eqnarray}
+A^{\alpha\beta}_3&=& \frac{15R_aR_bR_c-3R^2(R_a\delta_{bc}+R_b\delta_{ac}+R_c\delta_{ab})}{R^7} \times \\ \nonumber
+& & \quad\times \Big[
+           \frac{1}{3} {\mu}_a^{\beta} {\Theta}^{\alpha}_{bc} - 
+           \frac{1}{3} {\Theta}^{\beta}_{ab} {\mu}_c^{\alpha} -
+           \frac{1}{15} {\Omega}^{\alpha}_{abc} {q}^{\beta} +
+           \frac{1}{15} {\Omega}^{\beta}_{abc} {q}^{\alpha}
+           \Big] = \\ \nonumber
+&=&
+5\frac{R_c\mu_c^{\alpha} \cdot R_a\Theta_{ab}^{\beta}R_b - R_a\mu_a^{\beta} \cdot R_b\Theta_{bc}^{\alpha}R_c}{R^7} +
+ \frac{ q^{\beta}R_aR_bR_c\Omega^{\alpha}_{abc} - q^{\alpha}R_aR_bR_c\Omega^{\beta}_{abc}    }{R^7} + \\ \nonumber
+&&\quad+ 
+\frac{\mu_a^{\beta}R_a\Theta_{bb}^{\alpha} + R_b\Theta_{bc}^{\alpha}\mu_c^{\beta} + \mu_b^{\beta}\Theta_{bc}^{\alpha}R_c }{R^5} -
+\frac{R_a\Theta_{ac}^{\beta}\mu_c^{\alpha} + \mu_c^{\alpha}\Theta_{cb}^{\beta}R_b + \mu_c^{\alpha}R_c\Theta_{bb}^{\beta} }{R^5} - \\ \nonumber
+&&\quad- 
+\frac{q^{\beta}(R_a\Omega_{acc}^{\alpha} + R_b\Omega_{cbc}^{\alpha} + R_c\Omega_{bbc}^{\alpha})  }{R^5} +
+\frac{q^{\alpha}(R_a\Omega_{acc}^{\beta} + R_b\Omega_{cbc}^{\beta} + R_c\Omega_{bbc}^{\beta})  }{R^5} = \\ \nonumber
+&=&
+5\frac{{\bf R}{\BM\mu}^{\alpha}( {\bf R}\otimes_1{\BM\Theta}^{\beta}{}_2\otimes{\bf R}) - 
+       {\bf R}{\BM\mu}^{\beta} ( {\bf R}\otimes_1{\BM\Theta}^{\alpha}{}_2\otimes{\bf R})  }{R^7} + \\ \nonumber
+&&\quad+
+\frac{ q^{\beta}({\bf R}\otimes_1{\bf R}\otimes_2{\BM\Omega}^{\alpha}{}_3\otimes{\bf R}) - 
+       q^{\alpha}({\bf R}\otimes_1{\bf R}\otimes_2{\BM\Omega}^{\beta}{}_3\otimes{\bf R})    }{R^7} + \\ \nonumber
+&&\quad+
+2\frac{   {\BM \mu}^{\beta}\otimes_1{\BM\Theta}^{\alpha}{}_2\otimes{\bf R} - 
+          {\BM \mu}^{\alpha}\otimes_1{\BM\Theta}^{\beta}{}_2\otimes{\bf R}   }{R^5}
+\end{eqnarray}
+In the following derivations we used the traceless 
+property of quadrupole and octupole moments, i.e.
+$\Theta_{aa}=0$ and $\Omega_{aab}=\Omega_{aba}=\Omega_{baa}=0$
+for all combinations of subscripts.
+
+\subsubsection*{$A^{\alpha\beta}_4$ term}
+
+This term describes the interactions between dipole 
+and octupole, quadrupole-quadrupole as well as 
+monopole and hexadecapole interactions:
+\begin{eqnarray}
+A^{\alpha\beta}_4&=& \frac{1}{R^9} 
+            \Big[ 105R_aR_bR_cR_d \\ \nonumber
+        & &     - 15R^2(R_aR_b\delta_{cd} + R_aR_c\delta_{bd} + R_aR_d\delta_{bc} +
+                  R_bR_c\delta_{ad} + R_bR_d\delta_{ac} + R_cR_d\delta_{ab}) \\ \nonumber
+        & &     + 3R^4(\delta_{ab}\delta_{cd} + \delta_{ac}\delta_{bd} + \delta_{ad}\delta_{bc}) 
+            \Big] \times \\ \nonumber
+&&\quad\times\Big[ 
+\frac{1}{9} {\Theta}^{\beta}_{ab} {\Theta}^{\alpha}_{cd} - 
+\frac{1}{15} {\mu}_a^{\beta} {\Omega}^{\alpha}_{bcd} -
+\frac{1}{15} {\Omega}^{\beta}_{abc} {\mu}_d^{\alpha} +
+\frac{1}{105} {\Xi}^{\alpha}_{abcd} {q}^{\beta} + 
+\frac{1}{105} {q}^{\alpha} {\Xi}^{\beta}_{abcd}  
+\Big] =  \\ \nonumber 
+&=&
+\frac{35}{3} \frac{R_a\Theta_{ab}^{\alpha}R_b\cdot R_c\Theta_{cd}^{\beta}R_d }{R^9}     -
+7\frac{\mu_a^{\beta}R_a \cdot R_bR_cR_d\Omega_{bcd}^{\alpha} + 
+       R_aR_bR_c\Omega_{abc}^{\beta} \cdot \mu_d^{\alpha}R_d  }{R^9} - \\ \nonumber
+&&\quad- 
+\frac{15}{9}
+\frac{R_a\Theta_{ad}^{\beta}\Theta_{dc}^{\alpha}R_c + R_b\Theta_{bd}^{\beta}\Theta_{dc}^{\alpha}R_c +
+      R_b\Theta_{ba}^{\beta}\Theta_{ad}^{\alpha}R_d + R_a\Theta_{ac}^{\beta}\Theta_{cd}^{\alpha}R_d   }{R^7} + \\ \nonumber
+&&\quad+
+\frac{R_bR_c\Omega_{bca}^{\alpha}\mu_a^{\beta} + 
+      R_cR_d\Omega_{cda}^{\alpha}\mu_a^{\beta} +
+      R_bR_d\Omega_{bda}^{\alpha}\mu_a^{\beta}}{R^7}  + \\ \nonumber
+&&\quad+
+\frac{R_bR_c\Omega_{bca}^{\beta}\mu_a^{\alpha} + 
+      R_cR_d\Omega_{cda}^{\beta}\mu_a^{\alpha} +
+      R_bR_d\Omega_{bda}^{\beta}\mu_a^{\alpha}}{R^7}  + \\ \nonumber
+&&\quad+
+\frac{1}{3}
+\frac{\Theta_{cd}^{\beta}\Theta_{cd}^{\alpha} + \Theta_{cd}^{\beta}\Theta_{cd}^{\alpha}}{R^5} +
+\frac{R_aR_bR_cR_d(q^{\alpha}\Xi_{abcd}^{\beta}+\Xi_{abcd}^{\alpha}q^{\beta} )}{R^9} + \\ \nonumber
+&&\quad+
+\;\textrm{remaining zero terms with traces of }\Omega\;\textrm{and }\Xi= \\ \nonumber
+&=&
+\frac{35}{3} \frac{
+({\bf R}\otimes_1{\BM\Theta}^{\alpha}{}_2\otimes{\bf R})\cdot ({\bf R}\otimes_1{\BM\Theta}^{\beta}{}_2\otimes{\bf R})
+ }{R^9} - \\ \nonumber
+&&\quad-
+7\frac{
+({\BM\mu^{\beta}}{\bf R}) \cdot ({\bf R}\otimes_1{\bf R}\otimes_2{\BM\Omega}^{\alpha}{}_3\otimes{\bf R}) +
+({\BM\mu^{\alpha}}{\bf R}) \cdot ({\bf R}\otimes_1{\bf R}\otimes_2{\BM\Omega}^{\beta}{}_3\otimes{\bf R})
+}{R^9} - \\ \nonumber
+&&\quad-
+\frac{20}{3}
+\frac{
+({\bf R}\otimes_1{\BM\Theta}^{\alpha})\cdot({\bf R}\otimes_1{\BM\Theta}^{\beta})
+}{R^7} +
+\frac{2}{3}
+\frac{({\BM\Theta}^{\alpha}{}_{12}\otimes_{12}{\BM\Theta}^{\beta})}{R^5} + \\ \nonumber
+&&\quad+
+3\frac{
+({\bf R}\otimes_1{\bf R}\otimes_2{\BM\Omega}^{\alpha}{}_3\otimes{\BM \mu^{\beta}})+
+({\bf R}\otimes_1{\bf R}\otimes_2{\BM\Omega}^{\beta}{}_3\otimes{\BM \mu^{\alpha}})
+}{R^7} + \\ \nonumber
+&&\quad+
+\frac{
+q^{\beta} ({\bf R}\otimes_1{\bf R}\otimes_2{\bf R}\otimes_3{\BM\Xi}^{\alpha}{}_4\otimes{\bf R}) +
+q^{\alpha} ({\bf R}\otimes_1{\bf R}\otimes_2{\bf R}\otimes_3{\BM\Xi}^{\beta}{}_4\otimes{\bf R})  
+}{R^9}
+\end{eqnarray}
+%
+These working formulae are implemented in {\sc COULOMB.py} 
+standard routines except for the terms containing 
+hexadecapole moments. 
+
+\subsection{Electrostatic energy from ESP}
+
+Having the charges fitted by applying ESP procedure the first-order
+interaction energy simply equals:
+\begin{equation}
+E_{\rm int}^{(1)} = \sum_{\alpha\in A}\sum_{\beta\in B}\frac{q^{\alpha}q^{\beta}}{r_{\alpha\beta}}
+\end{equation}  
+
+\subsection{DFI pseudo-coulomb interaction energy}
+
+DFI method differs strongly from the previous ones primarily 
+because it involves not only classical electrostatic interaction 
+but also intermolecular first-order exchange-repulsion (from
+exchange integrals between electrons of respective molecules 
+or, here, \emph{fragments}) as well as first-order induction
+and delocalisation by applying self-consistent procedure for 
+optimisation DFI Hamiltonian matrix. The next very important
+benefit is that it allows to study the interactions between 
+\emph{more than two} molecules. Therefore it enables to take into 
+account many-body effects. Due to the fact that previous methods 
+are designed to calculate only coulomb iteraction energy, the 
+DFI interaction energy is called \emph{pseudo-coulomb}.
+
+
+% --------------------------------
+\section{Auxiliary method overview\label{sec:aux}}
+\subsection{Cumulative Atomic Multipole Moments}
+Cumulative Atomic Multipole Moments (CAMMs) are  
+cartesian atomic multipole moments distributed and centered 
+at the atomic positions and can be expressed recursively 
+by a change of coordinate system origin from the molecular 
+center to the respective atomic centers:
+\begin{equation}\label{e:CAMMs}
+M_{klm,i}^{\rm CAMM} = M_{klm,i} - {\sum_{k'\ge 0}^{k\ne k'} 
+                                    \sum_{l'\ge 0}^{l\ne l'} 
+                                    \sum_{m'\ge 0}^{m\ne m'}} {k \choose k'} 
+                                                              {l \choose l'} 
+                                                              {m \choose m'} \times x_i^{k-k'} y_i^{l-l'} z_i^{m-m'} M_{k'l'm',i}^{\rm CAMM}
+\end{equation}
+The transformed atomic multipole moments $M_{klm,i}$ all 
+centered at molecular origin and distributed at $i$-th atom 
+are described as:
+\begin{equation}\label{e:MMMs}
+M_{klm,i} = Z_ix_i^ky_i^lz_i^m - \sum_{\mu\in i} \sum_{\nu} P_{\mu\nu} \tbraket{\mu}{x^ky^lz^m}{\nu}
+\end{equation}
+After applying equations \ref{e:CAMMs} and \ref{e:MMMs} 
+for evaluation of the first four cumulative atomic multipoles
+one obtains the following working formulae:
+\begin{eqnarray}
+q^i       &=& Z_i - \sum_{\mu\in i} \sum_{\nu} P_{\mu\nu} S_{\mu\nu} \\
+\mu_{a}^i &=& \sum_{\mu\in i} \sum_{\nu} P_{\mu\nu} \big[    a_iS_{\mu\nu} -    \tbraket{\mu}{a}{\nu} \big] \\
+Q_{ab}^i  &=& \sum_{\mu\in i} \sum_{\nu} P_{\mu\nu} \big[-a_ib_iS_{\mu\nu} + b_i\tbraket{\mu}{a}{\nu} + a_i\tbraket{\mu}{b}{\nu} 
+                                                                             - \tbraket{\mu}{ab}{\nu} \big] \\
+\Omega_{abc}^i &=& \sum_{\mu\in i} \sum_{\nu} P_{\mu\nu} \big[a_ib_ic_iS_{\mu\nu} - b_ic_i\tbraket{\mu}{a}{\nu} 
+                                                                                  - a_ic_i\tbraket{\mu}{b}{\nu} 
+                                                                                  - a_ib_i\tbraket{\mu}{c}{\nu} \\\nonumber
+                                                               &&\qquad\qquad\quad+ c_i\tbraket{\mu}{ab}{\nu} 
+                                                                                  + b_i\tbraket{\mu}{ac}{\nu}
+                                                                                  + a_i\tbraket{\mu}{bc}{\nu}
+                                                                             - \tbraket{\mu}{abc}{\nu} \big] 
+\end{eqnarray} 
+\subsubsection*{Traceless form of CAMMs}
+Multpole $n$-rank tensor operators in 'ordinary' 
+cartesian form are defined as follows:
+\begin{equation}
+{\mathbf m}^{(n)} = \sum_i e_i \underbrace{{\mathbf r}_i \otimes \cdots \otimes {\mathbf r}_i}_{n}
+\end{equation}
+For instance, dipole, quadrupole and octupole tensor 
+operator elements are:
+\begin{eqnarray}\label{e:quadord}
+\mu_a         &=& \sum_i e_i a_i \\
+ Q_{ab}       &=& \sum_i e_i a_i b_i \\
+\Omega_{abc}  &=& \sum_i e_i a_i b_i c_i \quad  \textrm{where} \quad a,b,c=x,y \; \textrm{or} \; z
+\end{eqnarray}
+In many applications such a form of definition in the case
+of quadrupole and higher multipole moments leads
+to complicated formulas wich are difficult to operate
+in practice. This problem can be solved by using so called
+\emph{traceless form} of these operators which make them 
+convenient in use. For quadrupole 
+moment operator traceless forms is defined as follows:
+\begin{equation}\label{e:quadtraceless}
+Q_{ab}' = \frac{1}{2}\sum_i e_i \big( 3a_ib_i-r_i^2\delta_{ab}\big)
+\end{equation}
+In the case of octupole moment the definition is a bit more 
+complex:
+\begin{equation}
+\Omega_{abc}' = \frac{1}{2}\sum_i e_i \big( 5a_ib_ic_i-r_i^2(a_i\delta_{bc}+
+                                                                     b_i\delta_{ac}+
+                                                                     c_i\delta_{ab})\big)
+\end{equation}
+In the above equations $r_i^2$ equals:
+\begin{equation}\label{e:r2}
+r_i^2 = \sum_{a=\{x,y,z\}} {a_i}^2  
+\end{equation}
+It is very easy to switch between 'ordinary' tensor form to 
+traceless one and \emph{vice versa}. The transition to traceless
+quadrupole moment from ordinary cartesian quadrupole moment 
+can be done like in the example below. Rewriting the equation
+\ref{e:quadtraceless} and substituting the definition from 
+\ref{e:quadord} and \ref{e:r2} one quickly obtains:
+\begin{eqnarray}
+Q_{ab}' &=& \frac{3}{2}\sum_i e_ia_ib_i - \frac{1}{2}\sum_i\sum_{\alpha}e_i\alpha_i^2\delta_{ab} 
+= \frac{3}{2}Q_{ab} -\delta_{ab}\sum_{\alpha}\sum_ie_i\alpha_i^2 =\\ \nonumber 
+&=& \frac{3}{2}Q_{ab} - \delta_{ab}\;\mathrm{Tr}\;Q_{ab} 
+\end{eqnarray}
+Similar calculations for traceless octupole moment give
+following expression:
+\begin{eqnarray}
+\Omega_{abc}' &=& \frac{5}{2}\sum_i e_ia_ib_ic_i - \frac{1}{2}\sum_i\sum_{\alpha}e_i\alpha_i^2 \big(
+                                   a_i\delta_{bc} + b_i\delta_{ac} + c_i\delta_{ab}  \big) =\\ \nonumber
+&=& \frac{5}{2}\Omega_{abc} - \frac{1}{2} \big( \Omega_{\alpha\alpha a}\delta_{bc} +
+                                                \Omega_{\alpha\alpha b}\delta_{ac} + 
+                                                \Omega_{\alpha\alpha c}\delta_{ab}  \big)
+\end{eqnarray}
+where $\Omega_{\alpha\alpha c}$ denotes trace of $\mathbf{\Omega}$ 
+tensor with respect to the first two axes written in Einstein
+summation notation for simplicity. The monopole, dipole, 
+quadrupole and octupole moments from equations 3, 4, 13 and 14 
+are used in standard {\sc COULOMB.py} routines for the calculations 
+of electrostatic potential $V(\mathbf{r})$ as well as multipole part 
+of electrostatic interaction energy $\Delta E^{\textrm{MTP}}_{el}$ 
+between two multipole distributions. For more details see the section
+\ref{sec:eint} about methods of calculations of electrostatic potential 
+and interaction energy.
+
+\subsection{Fitting charges from electrostatic potential}
+The ESP method is used for calculation of coulomb interaction
+between charge distributions or in assigning the partial charges 
+on atoms in force field evaluation for molecular dynamics purposes. 
+The key problem in ESP is to perform the best possible fitting of 
+the charges to obtain the reference potential (in {\sc COULOMB.py} 
+either from CAMMs or wave function). 
+
+The function $\mathscr{Z}=\big| {\mathbf V}_{\rm ref} - {\mathbf A} {\mathbf q}^{\rm T}\big|$ 
+has to be minimized, where ${\mathbf V}_{\rm ref}$ is reference 
+potential, ${\mathbf q}$ is a vector of charges treated as variational 
+parameters and ${\mathbf A}$ is the distance matrix between these charges, 
+$A_{ij}=1/r_{ij}$. The convenient way to find ${\mathbf q}$ leads through 
+least-square procedure. The squares of the difference of calculated 
+potential has to be minimized with a constraint of constant total charge:
+\begin{equation}\label{e:Zfunc}
+Z(\{q_j\}) = \sum_i^m \Big(V_i-\sum_j^N \frac{q_j}{r_{ij}} \Big)^2 + \lambda\Big(\sum_j^N q_j-q_{tot}\Big)
+\end{equation}
+There is $m$ points in which electrostatic potential has to be
+estimated\footnote{in {\sc COULOMB.py} either from CAMMs or 
+directly from wave function. See section \ref{sec:eint}.} and $N$ 
+charges $q_j$ to be fit (usually on atoms). The constraint
+of the least-square fitting is here the total charge, $q_{tot}$
+with the associated undetermined Lagrange multiplier, $\lambda$.
+
+Minimisation of the function $Z(\{q_j\})$ is equivalent to take the
+first derivatives of $Z$ with respect to fitted charges $q_k$ 
+and to make it be equal to zero:
+\begin{equation}
+\Bigg(\frac{\pd Z(\{q_j\})}{\pd q_k} \Bigg)_{q_{(i\ne k)}}= 0
+\end{equation}
+Thus we have:
+\begin{eqnarray}
+\frac{\pd}{\pd q_k} 
+ \Bigg[
+     \sum_i^m \Big(
+                  V_i-\sum_j^N \frac{q_j}{r_{ij}} \Big)^2 + 
+                  \lambda\Big(\sum_j^N q_j-q_{tot}
+              \Big) 
+ \Bigg] = 
+2\sum_i^m \Big(
+                  V_i-\sum_j^N \frac{q_j}{r_{ij}} \Big) \Big( -\frac{1}{r_{ik}}\Big) + 
+                  \lambda = \\\nonumber
+\sum_j^N \sum_i^m \frac{q_j}{r_{ij}r_{ik}} - \sum_i^m \frac{V_i}{r_{ik}} + \lambda = 0 
+\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad
+\end{eqnarray}
+This equation can be written in a matrix form as follows:
+\begin{eqnarray}
+\Bigl(\begin{matrix}
+\bf A & 1\\ 
+1     & 0  
+\end{matrix}\Bigr) \Bigl(\begin{matrix}
+\bf q \\ \lambda 
+\end{matrix}\Bigr) = \Bigl(\begin{matrix}
+\bf B \\ 0 
+\end{matrix}\Bigr) \; ,
+\end{eqnarray}
+where the matrix elements are as follows:
+\begin{eqnarray}
+A_{jk} = \sum_i^m \frac{1}{r_{ij}r_{ik}} \\
+B_k    = \sum_i^m \frac{V_i}{r_{ik}}     
+\end{eqnarray}
+Inverting the matrix thad multiplies the vector with charges
+and $\lambda$ we get the fitted charges as a result.
+
+\subsection{Density Fragment Interaction Method}
+
+The DFI method is based on Hartree-Fock-Roothaan-Hall 
+equasion, when Fock matrix is diagonalized iteratively
+to obtain self-consistent density matrix and other useful
+variables. The DFI scheme extends Fock matrix by taking 
+into account the interactions between some pieces of an 
+entire system called \emph{fragments} as well as bath-system
+interactions. The entire Fock matrix comprises of fragment
+block Fock matrices. Thus, the modified Fock matrix for 
+a given fragment $A$ can be written as follows:
+\begin{equation}
+{\bf F}_A^{\rm DFI} = {\bf F}_A + \sum_{B\neq A} {\bf V}_{AB} + {\bf V}_{A-{\rm bath}}
+\end{equation}
+where ${\bf F}_A$ stands for gas-phase 'ordinary' Fock matrix,
+${\bf V}_{AB}$ is the $A$-$B$-interfragment interaction and
+${\bf V}_{A-{\rm bath}}$ denotes $A$-bath coupling. The explicit 
+formulae for the respective interactions are:
+\begin{eqnarray}
+{\bf V}_{AB} &=& {\BM \mu}_{AB} + {\BM \nu}_{AB}\quad \rm{where} \\
+{\BM \mu}_{AB} &=& -\sum_{b\in B} {\bf V}_A^b         \\
+{\BM \nu}_{AB} &=& {\bf P_B} ({\bf J}(BA) - \frac{1}{2}{\bf K}(BA)) \\
+J(BA)_{\lambda\sigma\in B}^{\mu\nu\in A} &=& (\mu\nu|\lambda\sigma) \\
+K(BA)_{\lambda\sigma\in B}^{\mu\nu\in A} &=& (\mu\sigma|\lambda\nu)
+\end{eqnarray}
+
+DFI scheme adopts self consistent procedure to consider equally each 
+of taken fragments. It is performed as follows:
+\begin{enumerate}
+\item ${\bf F}_A^{\rm DFI}$ for fragment $A$ is calculated 
+      from separate gas-phase density matrices ${\bf P}_i$
+      of fragments $i$. ${\bf P}_A$ density matrix is temporally
+      set to zero in order to avoid self-coulombic interactions
+      of this fragment.
+\item SCF procedure is applied on ${\bf F}_A^{\rm DFI}$ and new,
+      DFI density matrix for fragment A is obtained, ${\bf P}_A^{\rm DFI}$
+\item We switch to the next fragment, $B$. We construct for it 
+      ${\bf F}_B^{\rm DFI}$ from ${\bf P}_A^{\rm DFI}$,  ${\bf P}_B$ taken
+      as zero and other ${\bf P}_i$. 
+\item SCF procedure is applied on ${\bf F}_B^{\rm DFI}$ and now new,
+      DFI density matrix for fragment B is obtained, ${\bf P}_B^{\rm DFI}$
+\item We iterate like this until each of the fragments has been considered.
+\end{enumerate}
+After this procedure the respective DFI density matrices 
+${\bf P}_i^{\rm DFI}$ as well as interfragment interaction 
+potentials ${\bf V}_{ij}$ are obtained.  
+
+
+\end{document}
+=============================================================================================================================================
+                                                               BROOLLOUIN
+=============================================================================================================================================

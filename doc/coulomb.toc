@@ -1,0 +1,21 @@
+\select@language {english}
+\contentsline {section}{\numberline {1}Introduction}{2}
+\contentsline {section}{\numberline {2}Installation and program structure}{2}
+\contentsline {subsection}{\numberline {2.1}Main classes}{3}
+\contentsline {subsubsection}{\numberline {2.1.1}PARSER}{3}
+\contentsline {subsubsection}{\numberline {2.1.2}DO(PARSER)}{3}
+\contentsline {subsubsection}{\numberline {2.1.3}RUN}{3}
+\contentsline {subsubsection}{\numberline {2.1.4}ESP(RUN)}{3}
+\contentsline {subsubsection}{\numberline {2.1.5}MULTIP(RUN)}{4}
+\contentsline {subsubsection}{\numberline {2.1.6}EELEDS}{4}
+\contentsline {subsection}{\numberline {2.2}Input file syntax}{5}
+\contentsline {section}{\numberline {3}Long-range Interaction energy calculations}{6}
+\contentsline {subsection}{\numberline {3.1}Density Cube Method}{9}
+\contentsline {subsection}{\numberline {3.2}First-order electrostatics from VP IEDS}{9}
+\contentsline {subsection}{\numberline {3.3}Multipole part of electrostatic energy from CAMM IEDS}{10}
+\contentsline {subsection}{\numberline {3.4}Electrostatic energy from ESP}{12}
+\contentsline {subsection}{\numberline {3.5}DFI pseudo-coulomb interaction energy}{12}
+\contentsline {section}{\numberline {4}Auxiliary method overview}{13}
+\contentsline {subsection}{\numberline {4.1}Cumulative Atomic Multipole Moments}{13}
+\contentsline {subsection}{\numberline {4.2}Fitting charges from electrostatic potential}{14}
+\contentsline {subsection}{\numberline {4.3}Density Fragment Interaction Method}{15}

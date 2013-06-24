@@ -8,8 +8,9 @@ distributions. The format is free. It has three major fields:
   * origins of distributed moments (optional)
 
 If the latter field is absent it means that origins=structure. 
-The examplary  file can be found here. As you can see, the first field
-contains:
+The examplary files can be found [here](https://github.com/globulion/clmb/tree/master/doc/examples). 
+As you can see, the first field contains:
+
   *`Zeroth-order property` (charges)
   *`First-order property` (dipoles)
   *`Second-order property` (quadrupoles)

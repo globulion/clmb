@@ -10,10 +10,10 @@ distributions. The format is free. It has three major fields:
 If the latter field is absent it means that origins=structure. 
 The examplary files can be found [here](https://github.com/globulion/clmb/tree/master/doc/examples). 
 As you can see, the first field contains:
-  * `Zeroth-order property` (charges)
-  * `First-order property`  (dipoles)
-  * `Second-order property` (quadrupoles)
-  * `Third-order property`  (octupoles)
+  * `Zeroth-order property` - charges
+  * `First-order property`  - dipoles
+  * `Second-order property` - quadrupoles
+  * `Third-order property`  - octupoles
 
 At the end of this field always there is an information
 about the type of distributed quadrupoles and octupoles

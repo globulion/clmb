@@ -32,5 +32,7 @@ the origin position (in **Angstroms**) is printed just next to the information a
 If you have installed LIBBBG you can use `ParseDMA` function in Python
 using `coulomb` as a specifier of the format:
 ```
+from utilities import ParseDMA
 camm = ParseDMA('file.clmb','coulomb')
 ```
+It returns the `DMA` object.

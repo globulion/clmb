@@ -2,10 +2,30 @@ Coulomb file format
 ===================
 
 This file format indicates the DMTP (Mulliken, ChelpG, DMA, CAMM etc.)
-distributions. The format is free. It have three major fields:
+distributions. The format is free. It has three major fields:
   * distributed moments
   * atomic symbols and coordinates
   * origins of distributed moments (optional)
 
-If the latter field is absent, it means that origins=structure.
+If the latter field is absent it means that origins=structure. 
+The examplary  file can be found here. As you can see, the first field
+contains:
+  *`Zeroth-order property` (charges)
+  *`First-order property` (dipoles)
+  *`Second-order property` (quadrupoles)
+  *`Third-order property` (octupoles)
 
+At the end of this field always there is an information
+about the type of distributed quadrupoles and octupoles
+which can be either in **promitive** or
+**traceless** form, respectively. To understand the meaning of these
+forms see the [documentation](https://github.com/globulion/clmb/blob/master/doc/coulomb.pdf)
+of *Coulomb.py* package.
+
+### Reading the coulomb format file
+
+If you have installed LIBBBG you can use `ParseDMA` function in Python
+using `coulomb` as a specifier of the format:
+```
+camm = ParseDMA('file.clmb','coulomb')
+```

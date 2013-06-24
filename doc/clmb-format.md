@@ -20,7 +20,7 @@ As you can see, the first field contains:
 
 At the end of this field always there is an information
 about the type of distributed quadrupoles and octupoles
-which can be either in **promitive** or
+which can be either in **primitive** or
 **traceless** form, respectively. To understand the meaning of these
 forms see the [documentation](https://github.com/globulion/clmb/blob/master/doc/coulomb.pdf)
 of *Coulomb.py* package. If the number if distributed centers is

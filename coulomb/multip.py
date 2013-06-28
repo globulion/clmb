@@ -12,16 +12,27 @@ __all__=['MULTIP']
 
 class MULTIP(RUN):
     """\                                                          
+==================================================================
 Ccontains useful procedures for computing:                        
   - Molecular Multipole Moments (MMMs)                            
   - Cumulative Atomic Multipole Moments (CAMMs)                   
   - Cumulative Atomic and Bond Multipole Moments (CABMMs)         
+------------------------------------------------------------------
 USAGE:                                                            
   <object>=MULTIP(molecule,basis,method,matrix=None,multInts=None,
                   transition=False,bonds=[])                      
-1) calculationg the moments:                                      
+------------------------------------------------------------------
+1) calculating the moments:                                       
   <object>.mmms()                                                 
   <object>.camms()                                                
+2) returns the list of DMA objects created in <object>            
+  <object>.get()                                                  
+3) old printouts                                                  
+  <object>.__printMMMs__()                                        
+  <object>.__printCAMMs__()                                       
+4) new printount                                                  
+  print <object>                                                  
+===================================================================
 """
        
     def __init__(self, molecule, basis, method,
@@ -540,3 +551,10 @@ basing on the self.bonds list of bonds.
 
   
         print log
+
+    def __repr__(self):
+        """new printout form"""
+        log = ''
+        for dma in self.__dma_bin:
+            log+=str(dma)
+        return log

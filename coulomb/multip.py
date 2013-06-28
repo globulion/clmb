@@ -2,7 +2,8 @@
 #         MULTIPOLE DISTRIBUTION MODULE       #
 # ------------------------------------------- #
 
-from run  import *
+from dma        import DMA
+from run        import *
 from utilities2 import array_outer_product,    \
                        array_outer_product_1_2,\
                        array_outer_product_2_1
@@ -10,11 +11,22 @@ from utilities2 import array_outer_product,    \
 __all__=['MULTIP']
 
 class MULTIP(RUN):
-    """contains useful procedures for computing:
-       - Molecular Multipole Moments (MMMs)
-       - Cumulative Atomic Multipole Moments (CAMMs)"""
+    """\                                                          
+Ccontains useful procedures for computing:                        
+  - Molecular Multipole Moments (MMMs)                            
+  - Cumulative Atomic Multipole Moments (CAMMs)                   
+  - Cumulative Atomic and Bond Multipole Moments (CABMMs)         
+USAGE:                                                            
+  <object>=MULTIP(molecule,basis,method,matrix=None,multInts=None,
+                  transition=False,bonds=[])                      
+1) calculationg the moments:                                      
+  <object>.mmms()                                                 
+  <object>.camms()                                                
+"""
        
-    def __init__(self, molecule, basis, method,matrix=None,multInts=None,transition=False):
+    def __init__(self, molecule, basis, method,
+                       matrix=None,multInts=None,transition=False,
+                       bonds=[]):
         RUN.__init__(self, molecule, basis, method,matrix,multInts)
         # LIST1 - the list of atoms in the order of basis functions used, 
         # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis 
@@ -24,18 +36,121 @@ class MULTIP(RUN):
         self.LIST1 = self.bfs.LIST1 
         self.transition = transition
         self.name=molecule.name
+        self.bonds = bonds
+        # bonds - the list of tuples of atomic pairs engaged in bonds:
+        # bonds = [ (n11,n12), (n21,n22), ... , (ni1,ni2) ]           
+        # where ni1 > ni2 specifies list of i bonds, n are indices    
+        # in Python convention (N-1)                                  
+        self.pos, self.origin = self.__make_pos()
+        self.__dma_bin = []
+        self.operation = 'None'
 
+    def get(self):
+        """returns the DMA objects from all the runs"""
+        return self.__dma_bin
+    
     def mmms(self):
         """calculate molecular multipole moments"""
         
-        self.DipoleMoment = self.MU()
+        self.DipoleMoment    = self.MU()
         self.QuarupoleMoment = self.QUAD()
         self.OctupoleMoment  = self.OCT()
         #self.HexadecapoleMoment = self.HEX()
+        self.operation = 'MMM'
         self.clock.actualize("calculation of MMMs")
-
+        # save the DMA object
+        moments = [0,self.DipoleMoment,self.QuarupoleMoment,self.OctupoleMoment]
+        #self.__make_dma(moments=moments,
+        #                change_origins=False)  # napraw to bo to nie dziala!
+        return
+        
     def camms(self):
-        """calculate camms"""
+        """evaluates the distributed moments"""
+        if self.bonds: self.__cabmms()
+        else:          self.__camms()
+        return
+        
+    def __cabmms(self):
+        """calculates C(A+B)MMs"""
+        self.operation = 'CABMM'
+        
+        Mon      = []
+        Dip      = []
+        Quad     = []
+        Oct      = []
+        
+        n = 0 # atom number
+        ### [1] atomic moments
+        for atom in self.molecule.atoms:
+            if self.transition: qA  = 0
+            else:               qA  = atom.atno
+            ZA = atom.atno
+            R  = array(atom.pos())
+            RR = outer(R,R)
+            RRR= outer(R,outer(R,R)).reshape(3,3,3)
+            MA = ZA * R
+            QA = ZA * RR
+            OA = ZA * RRR
+            for I in xrange(self.K):
+                i = self.LIST1[I]
+                for J in xrange(self.K):
+                    j =  self.LIST1[J]
+                    if i==n==j:
+                       qA -= self.P[I,J] * self.S[I,J]
+                       MA -= self.P[I,J] * self.D[:,I,J]
+                       QA -= self.P[I,J] * self.Q[:,:,I,J]
+                       OA -= self.P[I,J] * self.O[:,:,:,I,J]
+                    elif ((i==n and j!=i) and (not self.__IJ_are_bonded(i,j))):
+                       qA -= self.P[I,J] * self.S[I,J]
+                       MA -= self.P[I,J] * self.D[:,I,J]
+                       QA -= self.P[I,J] * self.Q[:,:,I,J]
+                       OA -= self.P[I,J] * self.O[:,:,:,I,J]
+
+            Mon .append(qA)
+            Dip .append(MA)
+            Quad.append(QA)
+            Oct .append(OA)
+            n+=1
+            
+        ### [2] bond moments
+        qB  = {bond:0                            for bond in self.bonds}
+        MB  = {bond:zeros( 3     ,dtype=float64) for bond in self.bonds}
+        QB  = {bond:zeros((3,3  ),dtype=float64) for bond in self.bonds}
+        OB  = {bond:zeros((3,3,3),dtype=float64) for bond in self.bonds}
+        for bond in self.bonds:
+            for I in xrange(self.K):
+                for J in xrange(self.K):
+                    i = self.LIST1[I]
+                    j = self.LIST1[J]
+                    if (i,j) == bond:
+                        qB[bond] -= 2*self.P[I,J] * self.S[I,J]
+                        MB[bond] -= 2*self.P[I,J] * self.D[:,I,J]
+                        QB[bond] -= 2*self.P[I,J] * self.Q[:,:,I,J]
+                        OB[bond] -= 2*self.P[I,J] * self.O[:,:,:,I,J]
+        # append the bond moments
+        for bond in self.bonds:
+            Mon .append( qB[bond] )
+            Dip .append( MB[bond] )
+            Quad.append( QB[bond] )
+            Oct .append( OB[bond] )
+        # save C(A+B)MMS 
+        self.Mon   = Mon
+        self.Dip   = Dip
+        self.Quad  = Quad
+        self.Oct   = Oct
+ 
+        # clock measure
+        if self.bonds: self.clock.actualize('computing C(A+B)MMs')
+        else:          self.clock.actualize('computing CAMMs')
+        
+        # create the DMA object for calculated property
+        self.__make_dma(change_origins=True)
+        return
+                
+    def __camms(self):
+        """calculate CAMMs"""
+        self.operation = 'CAMM'
+
         Mon      = []
         Dip      = []
         Quad     = []
@@ -43,7 +158,7 @@ class MULTIP(RUN):
         n = 0 # atom number
         for atom in self.molecule.atoms:
             if self.transition: q  = 0
-            else:               q=atom.atno 
+            else:               q  = atom.atno
             M  = zeros( 3,dtype=float64)
             Q  = zeros((3,3),dtype=float64)
             O  = zeros((3,3,3),dtype=float64)
@@ -78,11 +193,11 @@ class MULTIP(RUN):
                        #                   )  
 
 
-            Mon.append(q)
-            Dip.append(M)
+            Mon .append(q)
+            Dip .append(M)
             Quad.append(Q)
-            Oct.append(O)
-            n+=1     
+            Oct .append(O)
+            n+=1
         # save CAMMS 
         self.Mon   = Mon
         self.Dip   = Dip
@@ -92,6 +207,97 @@ class MULTIP(RUN):
         # clock measure
         self.clock.actualize('computing CAMMs')
 
+        # create the DMA object for calculated property
+        self.__make_dma(change_origins=False)
+        return
+
+    def __IJ_are_bonded(self,I,J):
+        """\                                   
+determines wheather atoms I and J              
+are bound to each other. Returns boolean value 
+basing on the self.bonds list of bonds.        
+"""
+        is_bonded = False
+        if I!=J:
+           for bond in self.bonds:
+               if (I in bond) and (J in bond):
+                   is_bonded = True
+                   break
+        return is_bonded
+    
+    def __make_pos(self):
+        """calculate positions and origins"""
+        natoms = len(self.molecule.atoms)
+        nfrag  = natoms + len(self.bonds)
+        pos    = zeros((len(self.molecule.atoms),3),dtype=float64)
+        origin = zeros((nfrag,3),dtype=float64)
+        for i,atom in enumerate(self.molecule.atoms):
+            pos[i] = array(atom.pos())
+            origin[i] = array(atom.pos())
+        for i,bond in enumerate(self.bonds):
+            A = array(self.molecule.atoms[bond[0]].pos())
+            B = array(self.molecule.atoms[bond[1]].pos())
+            origin[natoms+i] = 0.5*(A+B)
+            
+        return pos, origin
+
+    def __make_dma(self,moments=None,change_origins=False):
+        """creates the DMA object and saves it into self.dma"""
+        #if moments is None:
+        #   mon=array(self.Mon),
+        #   dip=array(self.Dip),
+        #   quad=array(self.Quad),
+        #   oct=array(self.Oct)
+        #else:
+        #   print "FFF"
+        #   mon,dip,quad,oct = moments
+        #   mon = array(mon)[newaxis]
+        #   dip = array(dip)[newaxis]
+        #   quad= array(quad)[newaxis]
+        #   oct = array(oct)[newaxis]
+        
+        result = DMA(nfrag=len(self.origin))
+        result.set_name("%s --- %s %s/%s" % (self.molecule.name, self.operation,
+                                             self.method, self.basis) )
+        # in the case of C(A+B)MMs
+        if change_origins:
+           result.set_structure(pos=self.pos,origin=zeros((len(self.origin),3),dtype=float64))
+        # in the case of CAMMs and MMMs
+        else:
+           result.set_structure(pos=self.pos,equal=True)
+           
+        # accumulate the distributed moments to the DMA object
+        ###print array(self.Quad).shape,array(quad).shape
+        result.DMA[0][:] = array(self.Mon)
+        #
+        result.DMA[1][:] = array(self.Dip)
+        #
+        result.DMA[2][:,0] = array(self.Quad)[:,0,0]
+        result.DMA[2][:,1] = array(self.Quad)[:,1,1]
+        result.DMA[2][:,2] = array(self.Quad)[:,2,2]
+        result.DMA[2][:,3] = array(self.Quad)[:,0,1]
+        result.DMA[2][:,4] = array(self.Quad)[:,0,2]
+        result.DMA[2][:,5] = array(self.Quad)[:,1,2]
+        #
+        result.DMA[3][:,0] = array(self.Oct)[:,0,0,0]
+        result.DMA[3][:,1] = array(self.Oct)[:,1,1,1]
+        result.DMA[3][:,2] = array(self.Oct)[:,2,2,2]
+        result.DMA[3][:,3] = array(self.Oct)[:,0,0,1]
+        result.DMA[3][:,4] = array(self.Oct)[:,0,0,2]
+        result.DMA[3][:,5] = array(self.Oct)[:,0,1,1]
+        result.DMA[3][:,6] = array(self.Oct)[:,1,1,2]
+        result.DMA[3][:,7] = array(self.Oct)[:,0,2,2]
+        result.DMA[3][:,8] = array(self.Oct)[:,1,2,2]
+        result.DMA[3][:,9] = array(self.Oct)[:,0,1,2]
+        # finally change the origins from zeros to origins (for C(A+B)MMs)
+        if change_origins:
+           result.MAKE_FULL()
+           result.ChangeOrigin(new_origin_set=self.origin)
+        
+        self.__dma_bin.append(result)
+        
+        return
+        
     def MU(self):
         """calculate dipole moment""" 
         
@@ -268,7 +474,7 @@ class MULTIP(RUN):
     def __printCAMMs__(self):
         """
   .................................................................
-  :                 W. A. SOKALSKI & R. A. POIRIER                : 
+  :                 W. A. SOKALSKI & R. A. POIRIER                :
   :                 ******************************                :
   :        " CUMULATIVE ATOMIC MULTIPOLE REPRESENTATION           :
   :             OF THE MOLECULAR CHARGE DISTRIBUTION              :

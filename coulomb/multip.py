@@ -30,9 +30,9 @@ USAGE:
 3) old printouts                                                  
   <object>.__printMMMs__()                                        
   <object>.__printCAMMs__()                                       
-4) new printount                                                  
+4) new printout                                                   
   print <object>                                                  
-===================================================================
+==================================================================
 """
        
     def __init__(self, molecule, basis, method,

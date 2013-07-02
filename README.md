@@ -16,12 +16,16 @@ The auxiliary methods implemented are:
 
 * `ESP` - charges from fitting to the electrostatic potential,
 * `CAMM` - Cumulative Atomic Multipole Moments.
+* `CABMM` - Cumulative Atomic and Bond Moments
 
 The tutorial is under preparation. 
 
 ### Installation ###
 
 Installation prerequisites:
+- Python 2.6 or newer
+- NumPy module for Python
+- pp module for Python
 - PyQuante modified version (soon the link will be uploaded)
 - LibInt 1.1.4
 

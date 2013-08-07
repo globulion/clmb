@@ -44,5 +44,22 @@ and import PyQuante module:
 If everything is ok no message is printed. You can however get two messages:
 * module `cints` is not installed
 * openbabel is not installed (it is not harmful)
-The first problem is due to the failure in compiling and linking extension module `cints` - check
+
+The first problem is due to the failure in compiling and linking extension module `cints`. In this case check
 the compiler and so on.
+
+## III. Installation of Coulomb.py
+
+Just type the following command:
+```
+sudo python setup.py install
+```
+
+Everything should work properly. Now run the test computation (you should be in coulomb main directory):
+```
+cd tests/ethylene
+clmb hf.inp
+clmb e2-eds.inp
+clmb zwykle_e2.inp
+```
+If everything is OK you can be happy now.

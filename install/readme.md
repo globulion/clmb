@@ -10,7 +10,7 @@ Also, recommended are:
 * libint 1.1.4 (see this directory)
 
 The procedure for installation is as follows:
-* install Scipy, scitools and [libbbg](https://github.com/globulion/libbbg,"r")
+* install Scipy, scitools and [libbbg](https://github.com/globulion/libbbg "r")
 * install libint
 * install PyQuante Modified Version
 * install coulomb

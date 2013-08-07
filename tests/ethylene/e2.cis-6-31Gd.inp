@@ -1,0 +1,15 @@
+%mem=7200mb
+%chk=e2.cis-6-31Gd.chk
+%nproc=4
+#p CIS(NStates=4,Singlets)/6-31G(d) IOP(9/33=2) nosymm
+
+CIS/6-31G(d) calculations of the transition density matrix for ethylene
+
+0 1 
+C     -0.031871    3.000007    0.001312
+H     -0.053949    3.102551    1.069139
+C      1.188324    2.999997   -0.695389
+H     -0.962724    3.100044   -0.523396
+H      1.209504    3.099215   -1.763690
+H      2.119240    3.102685   -0.171502
+

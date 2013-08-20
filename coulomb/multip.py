@@ -37,7 +37,7 @@ USAGE:
        
     def __init__(self, molecule, basis, method,
                        matrix=None,multInts=None,transition=False,
-                       bonds=[],vec=None):
+                       bonds=None,vec=None):
         RUN.__init__(self, molecule, basis, method,matrix,multInts)
         # LIST1 - the list of atoms in the order of basis functions used,
         # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis
@@ -87,9 +87,67 @@ USAGE:
     
     def camms(self):
         """evaluates the distributed moments"""
-        if self.bonds: self.__cabmms()
-        else:          self.__camms()
+        if self.bonds is not None: self.__cabmms()
+        elif self.vec is not None: self.__lmtp()
+        else:                      self.__camms()
         return
+        
+    def __lmtp(self):
+        """calculate LMTP distribution"""
+        self.operation = 'LMTP'
+        nmos = len(self.vec)
+        
+        Mon      = []
+        Dip      = []
+        Quad     = []
+        Oct      = []
+        #
+        chr = zeros( nmos,dtype=float64)
+        dip = zeros((nmos,3),dtype=float64)
+        qdr = zeros((nmos,3,3),dtype=float64)
+        oct = zeros((nmos,3,3,3),dtype=float64)
+        # nuclear moments
+        for atom in self.molecule.atoms:
+            if self.transition: qA  = 0
+            else:               qA  = atom.atno
+            ZA = atom.atno
+            R  = array(atom.pos())
+            RR = outer(R,R)
+            RRR= outer(R,outer(R,R)).reshape(3,3,3)
+            MA = ZA * R
+            QA = ZA * RR
+            OA = ZA * RRR
+            #
+            Mon .append(qA)
+            Dip .append(MA)
+            Quad.append(QA)
+            Oct .append(OA)
+            
+        # electronic moments
+        for LMO in xrange(nmos):
+            A = self.vec[LMO]
+            chr = - 2* tensordot( A, tensordot(A, self.S,(0,0)), (0,0))
+            dip = - 2* tensordot( A, tensordot(A, self.D,(0,1)), (0,1))
+            qdr = - 2* tensordot( A, tensordot(A, self.Q,(0,2)), (0,2))
+            oct = - 2* tensordot( A, tensordot(A, self.O,(0,3)), (0,3))
+            #
+            Mon .append(chr)
+            Dip .append(dip)
+            Quad.append(qdr)
+            Oct .append(oct)
+
+        # save LMTP 
+        self.Mon   = Mon
+        self.Dip   = Dip
+        self.Quad  = Quad
+        self.Oct   = Oct
+        
+        # clock measure
+        self.clock.actualize('computing LMTP')
+        
+        # create the DMA object for calculated property
+        self.__make_dma(change_origins=True)
+        return            
         
     def __cabmms(self):
         """calculates C(A+B)MMs"""
@@ -249,16 +307,28 @@ basing on the self.bonds list of bonds.
     def __make_pos(self):
         """calculate positions and origins"""
         natoms = len(self.molecule.atoms)
-        nfrag  = natoms + len(self.bonds)
         pos    = zeros((len(self.molecule.atoms),3),dtype=float64)
-        origin = zeros((nfrag,3),dtype=float64)
-        for i,atom in enumerate(self.molecule.atoms):
-            pos[i] = array(atom.pos())
-            origin[i] = array(atom.pos())
-        for i,bond in enumerate(self.bonds):
-            A = array(self.molecule.atoms[bond[0]].pos())
-            B = array(self.molecule.atoms[bond[1]].pos())
-            origin[natoms+i] = 0.5*(A+B)
+        ### CBAMM  and CAMM and MMM
+        if self.bonds is not None:
+           nfrag  = natoms + len(self.bonds)
+           origin = zeros((nfrag,3),dtype=float64)
+           for i,atom in enumerate(self.molecule.atoms):
+               pos[i] = array(atom.pos())
+               origin[i] = array(atom.pos())
+           for i,bond in enumerate(self.bonds):
+               A = array(self.molecule.atoms[bond[0]].pos())
+               B = array(self.molecule.atoms[bond[1]].pos())
+               origin[natoms+i] = 0.5*(A+B)
+        ### LMTP
+        elif self.vec is not None:
+           self.centroids = self.get_centroids()
+           nfrag  = natoms + len(self.centroids)
+           origin = zeros((nfrag,3),dtype=float64)
+           for i,atom in enumerate(self.molecule.atoms):
+               pos[i] = array(atom.pos())
+               origin[i] = array(atom.pos())
+           for i,centroid in enumerate(self.centroids):
+               origin[natoms+i] = self.centroids[i]
             
         return pos, origin
 
@@ -276,7 +346,6 @@ basing on the self.bonds list of bonds.
         #   dip = array(dip)[newaxis]
         #   quad= array(quad)[newaxis]
         #   oct = array(oct)[newaxis]
-        
         result = DMA(nfrag=len(self.origin))
         result.set_name("%s --- %s %s/%s" % (self.molecule.name, self.operation,
                                              self.method, self.basis) )

@@ -5,6 +5,7 @@ Coulomb.py requires many prerequisites:
 * Python 2.7.3 or newer but not Python 3xxx
 * SciPy 0.9.0 or newer
 * setuptools module for Python
+* python-dev
 * libbbg (download it [here](https://github.com/globulion/libbbg))
 * PyQuante Modified Version (see this directory)
 
@@ -12,7 +13,7 @@ Also, recommended are:
 * libint 1.1.4 (see this directory)
 
 The procedure for installation is as follows:
-* install Python, Scipy, scitools, setuptools and [libbbg](https://github.com/globulion/libbbg "Click here to get the info how to install libbbg")
+* install Python, Scipy, scitools, setuptools, python-dev and [libbbg](https://github.com/globulion/libbbg "Click here to get the info how to install libbbg")
 * install libint (if want to increase the speed of ERI computation)
 * install PyQuante Modified Version
 * install coulomb
@@ -44,5 +45,22 @@ and import PyQuante module:
 If everything is ok no message is printed. You can however get two messages:
 * module `cints` is not installed
 * openbabel is not installed (it is not harmful)
-The first problem is due to the failure in compiling and linking extension module `cints` - check
+
+The first problem is due to the failure in compiling and linking extension module `cints`. In this case check
 the compiler and so on.
+
+## III. Installation of Coulomb.py
+
+Just type the following command:
+```
+sudo python setup.py install
+```
+
+Everything should work properly. Now run the test computation (you should be in coulomb main directory):
+```
+cd tests/ethylene
+clmb hf.inp
+clmb e2-eds.inp
+clmb zwykle_e2.inp
+```
+If everything is OK you can be happy now.

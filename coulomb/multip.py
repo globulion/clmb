@@ -37,17 +37,18 @@ USAGE:
        
     def __init__(self, molecule, basis, method,
                        matrix=None,multInts=None,transition=False,
-                       bonds=[]):
+                       bonds=[],vec=None):
         RUN.__init__(self, molecule, basis, method,matrix,multInts)
-        # LIST1 - the list of atoms in the order of basis functions used, 
-        # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis 
+        # LIST1 - the list of atoms in the order of basis functions used,
+        # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis
         # LIST1 = 0    0    0    0    0    1    2
         #         |    |    |    |    |    |    |
         #        1s   2s   2px  2py  2pz  1s   1s
-        self.LIST1 = self.bfs.LIST1 
+        self.LIST1 = self.bfs.LIST1
         self.transition = transition
         self.name=molecule.name
         self.bonds = bonds
+        self.vec = vec
         # bonds - the list of tuples of atomic pairs engaged in bonds:
         # bonds = [ (n11,n12), (n21,n22), ... , (ni1,ni2) ]           
         # where ni1 > ni2 specifies list of i bonds, n are indices    
@@ -75,6 +76,15 @@ USAGE:
         #                change_origins=False)  # napraw to bo to nie dziala!
         return
         
+    def get_centroids(self):
+        """calculate LMO centroids"""
+        nmos = len(self.vec)
+        centroids = zeros((nmos,3),dtype=float64)
+        for LMO in xrange(nmos):
+            centroids[LMO] = tensordot( self.vec[LMO], tensordot(self.vec[LMO],
+                                                                 self.D,(0,1)), (0,1))
+        return centroids
+    
     def camms(self):
         """evaluates the distributed moments"""
         if self.bonds: self.__cabmms()

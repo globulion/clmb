@@ -101,11 +101,7 @@ USAGE:
         Dip      = []
         Quad     = []
         Oct      = []
-        #
-        chr = zeros( nmos,dtype=float64)
-        dip = zeros((nmos,3),dtype=float64)
-        qdr = zeros((nmos,3,3),dtype=float64)
-        oct = zeros((nmos,3,3,3),dtype=float64)
+        
         # nuclear moments
         for atom in self.molecule.atoms:
             if self.transition: qA  = 0
@@ -136,7 +132,7 @@ USAGE:
             Quad.append(qdr)
             Oct .append(oct)
 
-        # save LMTP 
+        # save LMTP
         self.Mon   = Mon
         self.Dip   = Dip
         self.Quad  = Quad
@@ -147,7 +143,7 @@ USAGE:
         
         # create the DMA object for calculated property
         self.__make_dma(change_origins=True)
-        return            
+        return
         
     def __cabmms(self):
         """calculates C(A+B)MMs"""
@@ -379,11 +375,12 @@ basing on the self.bonds list of bonds.
         result.DMA[3][:,7] = array(self.Oct)[:,0,2,2]
         result.DMA[3][:,8] = array(self.Oct)[:,1,2,2]
         result.DMA[3][:,9] = array(self.Oct)[:,0,1,2]
-        # finally change the origins from zeros to origins (for C(A+B)MMs)
+        # finally change the origins from zeros to origins (for C(A+B)MMs and LMTP)
         if change_origins:
            result.MAKE_FULL()
            result.ChangeOrigin(new_origin_set=self.origin)
-        
+           
+        result.set_structure(pos=self.pos)
         self.__dma_bin.append(result)
         
         return

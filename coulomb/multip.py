@@ -304,7 +304,7 @@ basing on the self.bonds list of bonds.
         """calculate positions and origins"""
         natoms = len(self.molecule.atoms)
         pos    = zeros((len(self.molecule.atoms),3),dtype=float64)
-        ### CBAMM  and CAMM and MMM
+        ### CBAMM
         if self.bonds is not None:
            nfrag  = natoms + len(self.bonds)
            origin = zeros((nfrag,3),dtype=float64)
@@ -315,6 +315,13 @@ basing on the self.bonds list of bonds.
                A = array(self.molecule.atoms[bond[0]].pos())
                B = array(self.molecule.atoms[bond[1]].pos())
                origin[natoms+i] = 0.5*(A+B)
+        ### CAMM and MMM
+        elif (self.bonds is None) and (self.vec is None):
+           nfrag  = natoms
+           origin = zeros((nfrag,3),dtype=float64)
+           for i,atom in enumerate(self.molecule.atoms):
+               pos[i] = array(atom.pos())
+               origin[i] = array(atom.pos())            
         ### LMTP
         elif self.vec is not None:
            self.centroids = self.get_centroids()

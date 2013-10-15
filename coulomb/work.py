@@ -13,7 +13,7 @@ __all__=['DO']
 
 class DO(PARSER):
     """contains main routine for COULOMB.py"""
-    
+    outname = None
     def __init__(self,file):
         # --- prepare commands to be invoked
         PARSER.__init__(self,file)
@@ -60,6 +60,8 @@ class DO(PARSER):
                   self.Print = bool(self.search(task)[0])
             if   'mpoints' in task.lower(): 
                   self.mpot = int(self.search(task)[0])
+            if   'save' in task.lower():
+                  self.outname = self.search(task)[0]
                   
         # ---- DO! ----
         # multipole population calculations
@@ -110,6 +112,10 @@ class DO(PARSER):
             if method.lower() == 'camm':
                  result.camms()
                  result.__printCAMMs__()
+                 if self.outname is not None:
+                    dma = result.get()[0]
+                    dma.write(self.outname)
+                    self.__dma = dma
 
             elif method.lower() == 'mmm':
                  result.mmms()

@@ -7,7 +7,8 @@ from parser import PARSER
 from multip import * 
 from esp    import *
 from eeleds import *
-from eint   import *  
+from eint   import * 
+from dma    import DMA 
 
 __all__=['DO']
 
@@ -135,12 +136,24 @@ class DO(PARSER):
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
                                    matrix=self.dmat_set[i],
-                                   transition=self.transition) 
+                                   transition=self.transition)
+                      dma = DMA(nfrag=len(mol.atoms))
+                      dma.set_moments(charges=result.charges)
+                      dma.set_structure(pos=mol.get_pos(),equal=True)
+                      if self.outname is not None:
+                         dma.write(self.outname)
+                      self.__dma = dma
             except IndexError: 
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
-                                   transition=self.transition) 
+                                   transition=self.transition)
+                      dma = DMA(nfrag=len(mol.atoms))
+                      dma.set_moments(charges=result.charges)
+                      dma.set_structure(pos=mol.get_pos(),equal=True)
+                      if self.outname is not None:
+                         dma.write(self.outname)
+                      self.__dma = dma
                                    
     def eint(self,method):
         """performs electrostatic interaction energy 

@@ -4,7 +4,7 @@
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   * --------------------------------------------------------- *
   *                   QUANTUM CHEMISTRY                       *
-  *                  CALCULATION PACKAGE                      * 
+  *                  CALCULATION PACKAGE                      *
   *                     C O U L O M B                         *
   * --------------------------------------------------------- *
   *  Author        :    Bartosz Błasiak & Robert W. Góra      *

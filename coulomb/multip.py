@@ -188,10 +188,22 @@ USAGE:
             n+=1
             
         ### [2] bond moments
+        # code for python-2.7
         qB  = {bond:0                            for bond in self.bonds}
         MB  = {bond:zeros( 3     ,dtype=float64) for bond in self.bonds}
         QB  = {bond:zeros((3,3  ),dtype=float64) for bond in self.bonds}
         OB  = {bond:zeros((3,3,3),dtype=float64) for bond in self.bonds}
+        # code for python-2.6
+        #qB = {}
+        #MB = {}
+        #QB = {}
+        #OB = {}
+        #for bond in self.bonds:
+        #    qB.update({bond:0})
+        #    MB.update({bond:zeros( 3     ,dtype=float64)})
+        #    QB.update({bond:zeros((3,3  ),dtype=float64)})
+        #    OB.update({bond:zeros((3,3,3),dtype=float64)})
+        #
         for bond in self.bonds:
             for I in xrange(self.K):
                 for J in xrange(self.K):

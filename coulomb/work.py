@@ -2,13 +2,13 @@
 #               WORKING UTILITIES               #
 # --------------------------------------------- #
 
-from units  import *
+from libbbg.units  import *
+from libbbg.dma    import DMA 
 from parser import PARSER
 from multip import * 
 from esp    import *
 from eeleds import *
 from eint   import * 
-from dma    import DMA 
 
 __all__=['DO']
 

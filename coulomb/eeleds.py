@@ -16,9 +16,9 @@ from PyQuante          import SCF
 from PyQuante.Ints     import getbasis, getS, getM, getJ, getK, sortints
 from PyQuante.cints    import ijkl2intindexBTF as intindexBTF
 from PyQuante.CGBF     import coulomb
-#-----------------------
-from units import *
-# ----------------------
+#-------------------------
+from libbbg.units import *
+# ------------------------
 
 __all__=['EELEDS']
 

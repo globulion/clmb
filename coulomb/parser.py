@@ -16,7 +16,7 @@ from PyQuante.Ints     import getbasis, getS, getM, getJ, getK, sortints
 from PyQuante.cints    import ijkl2intindexBTF as intindexBTF
 from PyQuante.CGBF     import coulomb
 #------------------------------------------------------------------------
-from utilities import *
+from libbbg.utilities import *
 from util import read_transition_dmatrix
 # ---------------------
 

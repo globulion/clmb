@@ -5,8 +5,8 @@
 __all__=['CUBFLE','PotentialMap']
 
 from numpy import *
-from utilities import Read_xyz_file, Vr_dma, Energy_density
-from units import *
+from libbbg.utilities import Read_xyz_file, Vr_dma, Energy_density
+from libbbg.units import *
 
 class CUBFLE:
       """represents Gaussian CUBE file"""

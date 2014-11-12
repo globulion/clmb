@@ -2,11 +2,11 @@
 #         MULTIPOLE DISTRIBUTION MODULE       #
 # ------------------------------------------- #
 
-from dma        import DMA
+from libbbg.dma import DMA
 from run        import *
-from utilities2 import array_outer_product,    \
-                       array_outer_product_1_2,\
-                       array_outer_product_2_1
+from libbbg.utilities2 import array_outer_product,    \
+                              array_outer_product_1_2,\
+                              array_outer_product_2_1
 
 __all__=['MULTIP']
 

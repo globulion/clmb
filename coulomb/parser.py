@@ -74,6 +74,7 @@ class PARSER:
       self.method = fpr[0]
       self.basis  = fpr[1]
       self.tasks  = fpr[2].split()
+      self.state  = int(re.search('(?<=state=)[0-9]*', first).group(0))
 
   def molecules(self):
       """withdraws molecular specifications:

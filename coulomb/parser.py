@@ -136,7 +136,7 @@ class PARSER:
                             matrix_querry='Beta transition density to state',
                             filetype=self.dmat_file_type,file=line.split('=')[-1],
                             state=self.state)
-                 dmat=0.5*dmat # due to normalization of coeffs in gaussian to 1/2
+                 dmat=sqrt(2.0)*0.5*dmat # due to normalization of coeffs in gaussian to 1/2
 
                  self.dmat_set.append(dmat)
                  break

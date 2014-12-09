@@ -9,16 +9,27 @@ from numpy import *
 #---------------------------------
 import re, os, sys, getopt, random
 from time import time
-from sys  import argv, exit
+from sys  import argv, exit, stdout
 #------------------------------------------------------------------------
 from PyQuante.Molecule import Molecule
 from PyQuante          import SCF
-from PyQuante.Ints     import getbasis, getS, getM, getJ, getK, sortints
-from PyQuante.cints    import ijkl2intindexBTF as intindexBTF
+from PyQuante.Ints     import getbasis, getS, getM, getJ, getK, get2ints, sortints
+#from PyQuante.Ints     import sortints
+#from PyQuante.cints    import ijkl2intindexBTF as intindexBTF
 from PyQuante.CGBF     import coulomb
 #-------------------------
 from libbbg.units import *
-# ------------------------
+#-------------------------
+# memory profiler analyzes memory usage of decorated function
+# @memprof(plot = True, threshold = 1024)
+#
+#from memprof import * 
+#-------------------------
+# Debug PyQuante routines
+#
+#import logging
+#logging.basicConfig(format="%(message)s",level=logging.DEBUG)
+#-------------------------
 
 __all__=['EELEDS']
 
@@ -35,24 +46,41 @@ class EELEDS:
        mon1 = self.makeMonomerDcbs(molecule1,molecule2,2) 
        mon2 = self.makeMonomerDcbs(molecule1,molecule2,1)
        DCBS = getbasis(dimer,basis)
-       print "Basis size: %d basis functions. Want to continue?" % len(DCBS)
-       y = input("1/0")
-       if not y: exit()
        #bfs1 = getbasis(molecule1,basis)
        #bfs2 = getbasis(molecule2,basis)
-       # calculate density matrices of monomers in DCBS
-       run1 = SCF(molecule1,bfs=DCBS,method=method)
-       run1.iterate()
+
+       # Minimal sanity check
+       y = input("Basis size: %d basis functions.\nTwo-electron integrals will need roughly %4.1f mb.\nWant to continue? (1/0)\n" % (len(DCBS),(len(DCBS)**4)*8/1048576.))
+       if not y: exit()
+       if self.exchange and not self.transition:
+           print "Exchange term is implemented only for transition densities"
+           self.exchange = False  
+       if self.transition and 'NoneType' in str(type(matrixa)):
+           print "Transition densities were not provided in the input file. Error termination."
+           exit()
+       if not self.transition and not 'NoneType' in str(type(matrixa)):
+           print "Transition densities are to be read but the trans keyword is not set in input. Error termination."
+           exit()
+
        if 'NoneType' in str(type(matrixa)):
+           # calculate density matrices of monomers in DCBS
+           run1 = SCF(molecule1,bfs=DCBS,method=method)
+           run1.iterate()
            Pa = 2*run1.dmat
+           del run1
            run2 = SCF(molecule2,bfs=DCBS,method=method)
            run2.iterate()
            Pb = 2*run2.dmat
+           # save electron repulsion integrals in DCBS
+           ERI = run2.ERI
+           del run2
        else:
+           # read density matrices of monomers in DCBS
            Pa = matrixa
            Pb = matrixb
-       # 2-electron integrals 
-       ERI = run1.ERI
+           # calculate electron repulsion integrals in DCBS
+           ERI = get2ints(DCBS)
+
        # calculate interaction energy!
        self.CalcEint(ERI,DCBS,mon1,mon2,Pa,Pb)
 
@@ -85,7 +113,49 @@ class EELEDS:
               dimer.atoms[i].atno = 0
        return dimer
 
+   def getJa(self,bfs,D):
+        "Form the Coulomb operator corresponding to a density matrix D"
+        nbf = D.shape[0]
+        D1d = reshape(D,(nbf*nbf,)) #1D version of Dens
+        J = zeros((nbf,nbf),'d')
 
+        for i in xrange(nbf):
+            for j in xrange(i+1):
+
+                temp = zeros(nbf*nbf,'d')
+                ij = i*(i+1)/2+j
+                for k in xrange(nbf):
+                    for l in xrange(k+1):
+                        kl = k*nbf+l
+                        lk = l*nbf+k
+                        temp[kl] = coulomb(bfs[i],bfs[j], bfs[k],bfs[l])
+                        temp[lk] = temp[kl]
+
+                J[i,j] = dot(temp,D1d)
+                J[j,i] = J[i,j]
+        return J
+
+   def getJb(self,bfs,D):
+        "Form the Coulomb operator corresponding to a density matrix D"
+        nbf = D.shape[0]
+        D1d = reshape(D,(nbf*nbf,)) #1D version of Dens
+        J = zeros((nbf,nbf),'d')
+        for i in xrange(nbf):
+            for j in xrange(i+1):
+
+                temp = zeros(nbf*nbf,'d')
+                kl = 0
+                ij = i*(i+1)/2+j
+                for k in xrange(nbf):
+                    for l in xrange(nbf):
+                        temp[kl] = coulomb(bfs[i],bfs[j], bfs[k],bfs[l])
+                        kl += 1
+
+                J[i,j] = dot(temp,D1d)
+                J[j,i] = J[i,j]
+        return J
+
+   #@memprof(plot = True, threshold = 1024)
    def CalcEint(self,ERI,DCBS,mon1,mon2,Pa,Pb):
        """calculates E_el EDS interaction energy"""
        
@@ -95,24 +165,37 @@ class EELEDS:
        #Pa2 = self.Block(Pa,K1+1,len(Pa))
        #Pb1 = self.Block(Pb,0,K1)
        #Pb2 = self.Block(Pb,K1+1,len(Pa))
-
-       if not self.transition:
-          V1 = self.CalcNuclAtt(DCBS,mon2)
-          V2 = self.CalcNuclAtt(DCBS,mon1)
        #D1 = self.CalcIntMat(P1b,len(bfs1),len(bfs2),IntsBTF12,1)
        #D2 = self.CalcIntMat(P1a,len(bfs1),len(bfs2),IntsBTF12,2)
-       G = getJ(ERI,Pb) 
-       if self.exchange: X = -0.5*getK(ERI,Pb)
+
        if not self.transition:
-          vab = self.CalcNucNuc(mon1,mon2)
+          # nuclear attraction terms
+          V1 = self.CalcNuclAtt(DCBS,mon2)
+          V2 = self.CalcNuclAtt(DCBS,mon1)
           v1b = trace(dot(Pa,V1)) 
           v2a = trace(dot(Pb,V2)) 
+          # nuclear repulsion term
+          vab = self.CalcNucNuc(mon1,mon2)
+
+       # electron repulsion integrals in-core
+       G = getJ(ERI,Pb) 
+       if self.exchange:
+          X = -0.5*getK(ERI,Pb)
+       del ERI
+       # direct calculation of electron repulsion integrals
+       # getJa should be faster for larger molecules
+       #
+       #G = self.getJa(DCBS,Pb) 
+       #G = self.getJa(DCBS,Pb) 
+
+       # electron repulsion term
        v12 = trace(dot(Pa,G))
 
        #print "vab = ",vab
        #print "v1b = ",v1b
        #print "v2a = ",v2a
        #print "v12 = ",v12
+
        if not self.transition:
           self.eint_coul = (vab+v1b+v2a+v12) * UNITS.HartreeToCmRec
        else:

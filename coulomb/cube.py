@@ -432,10 +432,6 @@ If '0' - the point lies outside atom's vdW sphere."""
         
         self.h = self.box_size/array(self.dimensions)
         self.spacings = diag(self.h)
-        print self.h
-        print self.spacings
-        print self.box_size
-        print self.dimensions
         
         self.data = zeros(self.dimensions[0]*self.dimensions[1]*self.dimensions[2],float64)
         

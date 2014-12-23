@@ -270,28 +270,35 @@ class QMMap(CUBFLE):
 
  III. ARGUMENTS.
      
-     coord   - list of atomic symbols and coordinates (in Bohr) of the form:     
-               [ list_1, list_2, ..., list_n ]
-               where list_n = ['Na', 0.2, 0.3, 0.4] for example
-               One can generate after opening xyz file by libbbg.utilities.QMFile:
-               coord = QMFile_instance.get_coord_list()
-     dmat    - ndarray of size nbs x nbs
-     bfs     - PyQuante.BasisSet object of length nbs
-               It can be easily generated e.g. by QMFile:
-               bfs = QMFile_instance.get_bfs()
-     dma     - libbbg.dma.DMA object
-     nxyz    - dimensions of the resulting cube (default is 60 x 60 x 60 points)
-     padding - padding (in Bohr) of the cube in x, y and z directions. The size 
-               of the cube will be extended by +/- u_max/u_min (u=x,y,z) where
-               u_min/max are the minimal/maximal vaules of atomic coordinates
+     coord      - list of atomic symbols and coordinates (in Bohr) of the form:     
+                  [ list_1, list_2, ..., list_n ]
+                  where list_n = ['Na', 0.2, 0.3, 0.4] for example
+                  One can generate after opening xyz file by libbbg.utilities.QMFile:
+                  coord = QMFile_instance.get_coord_list()
+     dmat       - ndarray of size nbs x nbs
+     bfs        - PyQuante.BasisSet object of length nbs
+                  It can be easily generated e.g. by QMFile:
+                  bfs = QMFile_instance.get_bfs()
+     dma        - libbbg.dma.DMA object
+     dimensions - dimensions of the resulting cube (default is 60 x 60 x 60 points)
+     padding    - padding (in Bohr) of the cube in x, y and z directions. The size 
+                  of the cube will be extended by +/- u_max/u_min (u=x,y,z) where
+                  u_min/max are the minimal/maximal vaules of atomic coordinates.
+     npts       - uniform grid density of npts points per bohr. Use 3 for coarse, 5 for 
+                  medium and 10 for dense grids.
 
  IV. NOTES.
 
-     o The increment in each direction is assumed to be the same and is calculated as
+     o This routine produces cubic grids. The increment in each direction is
+       assumed to be constant and is calculated as:
        h = ( xyz_max - xyz_min) / array(dimensions)
-       where xyz_min/max are the coordinates after adding padding vectors
+       where xyz_min/max are the terminal coordinates after adding padding vectors
        Therefore the 'standard orientation' of molecule is recommended for the compact
        cubes (i.e., the main axes of symmetry being colinear with global coordinate axes).
+
+     o Instead of defining the grid by providing dimensions vector, one may
+       define the uniform grid density on npts point per bohr. In such a case the dimensions
+       are calculated accordingly.
 
   V. SYNOPSIS.
 
@@ -309,13 +316,15 @@ class QMMap(CUBFLE):
 """
     
     def __init__(self, coord_list, dmat=None, bfs=None, dma=None, 
-                       dimensions=(60,60,60), padding=(4.0,4.0,4.0)):
+                       dimensions=(60,60,60), padding=(4.0,4.0,4.0),npts=None):
         self.file = 'None'
         # check the type of calculation
         if (dmat is None and dma is None): 
             raise TypeError(" You must specify either WFN or DMA to proceed! Termination.")
-        if dmat is not None: self.calc_type = 'wfn'
-        else:                self.calc_type = 'dma'
+        if dmat is not None:
+            self.calc_type = 'wfn'
+        else:
+            self.calc_type = 'dma'
         # gather the memorials 
         self.coord = coord_list
         self.N_atoms = len(coord_list)
@@ -324,9 +333,10 @@ class QMMap(CUBFLE):
             self.coord[i][0] = Atom(self.coord[i][0]).atno
             self.coord[i].insert(1, 0.00000)
         self.coord = array(self.coord)
-        self.npoints = dimensions[0]*dimensions[1]*dimensions[2]
         self.dimensions=dimensions
+        self.npoints = prod(self.dimensions)
         self.padding=array(padding,dtype=float64)
+        self.npts = npts
         self.dmat = dmat
         self.bfs = bfs
         # prepare the dma object if any
@@ -412,8 +422,20 @@ If '0' - the point lies outside atom's vdW sphere."""
         
         self.origin = self.xyz_min
         
-        self.h = (self.xyz_max - self.xyz_min)/array(self.dimensions)
+        #change dimensions for a regular grid of npts points per bohr
+        self.box_size = self.xyz_max - self.xyz_min
+        if self.npts is not None:
+            self.h = ones(3)/self.npts
+            self.dimensions = rint(self.box_size/self.h)
+            self.dimensions = self.dimensions.astype(int)
+            self.npoints = prod(self.dimensions)
+        
+        self.h = self.box_size/array(self.dimensions)
         self.spacings = diag(self.h)
+        print self.h
+        print self.spacings
+        print self.box_size
+        print self.dimensions
         
         self.data = zeros(self.dimensions[0]*self.dimensions[1]*self.dimensions[2],float64)
         

@@ -74,7 +74,7 @@ class PARSER:
       self.method = fpr[0]
       self.basis  = fpr[1]
       self.tasks  = fpr[2].split()
-      self.state  = int(re.search('(?<=state=)[0-9]*', first).group(0))
+      #self.state  = int(re.search('(?<=state=)[0-9]*', first).group(0))
 
   def molecules(self):
       """withdraws molecular specifications:
@@ -125,6 +125,10 @@ class PARSER:
           mol1 = Molecule('%s' % name,coords,multiplicity=multiplicity,charge=charge,units=self.units)
           M.append(mol1)
           # try to read molecular density matrix and overlap matrix 
+          for line in a:
+              if line.startswith('STATE='):
+                 self.state=int(line.split('=')[-1])
+                 break
           for line in a:
               if line.startswith('DMATRIX='):
                  dmat = read_transition_dmatrix(

@@ -69,7 +69,7 @@ class PARSER:
       tasks to be performed"""
       
       first = self.text[0]
-      fp = re.compile('# *?([a-zA-Z0-9]*)\/([a-zA-Z0-9]*-?[a-zA-Z0-9/**/(*)*]*)\s(.*)')
+      fp = re.compile('# *?([a-zA-Z0-9]*)\/([a-zA-Z0-9]*-?[a-zA-Z0-9|*|+|\(|\)|,]*)\s(.*)')
       fpr= fp.search(first).groups()
       self.method = fpr[0]
       self.basis  = fpr[1]

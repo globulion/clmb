@@ -20,7 +20,7 @@ Ccontains useful procedures for computing:
 ------------------------------------------------------------------
 USAGE:                                                            
   <object>=MULTIP(molecule,basis,method,matrix=None,multInts=None,
-                  transition=False,bonds=[])                      
+                  transition=False,bonds=[],hexadecapoles=False)                      
 ------------------------------------------------------------------
 1) calculating the moments:                                       
   <object>.mmms()                                                 
@@ -37,7 +37,7 @@ USAGE:
        
     def __init__(self, molecule, basis, method,
                        matrix=None,multInts=None,transition=False,
-                       bonds=None,vec=None):
+                       bonds=None,vec=None,hexadecapoles=False):
         RUN.__init__(self, molecule, basis, method,matrix,multInts)
         # LIST1 - the list of atoms in the order of basis functions used,
         # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis
@@ -56,6 +56,7 @@ USAGE:
         self.pos, self.origin = self.__make_pos()
         self.__dma_bin = []
         self.operation = 'None'
+        self.__if_hexadecapoles = hexadecapoles
 
     def get(self):
         """returns the DMA objects from all the runs"""
@@ -67,11 +68,12 @@ USAGE:
         self.DipoleMoment    = self.MU()
         self.QuarupoleMoment = self.QUAD()
         self.OctupoleMoment  = self.OCT()
-        #self.HexadecapoleMoment = self.HEX()
+        if self.__if_hexadecapoles: 
+           self.HexadecapoleMoment = self.HEX()
         self.operation = 'MMM'
         self.clock.actualize("calculation of MMMs")
         # save the DMA object
-        moments = [0,self.DipoleMoment,self.QuarupoleMoment,self.OctupoleMoment]
+        #moments = [0,self.DipoleMoment,self.QuarupoleMoment,self.OctupoleMoment]
         #self.__make_dma(moments=moments,
         #                change_origins=False)  # napraw to bo to nie dziala!
         return
@@ -101,6 +103,7 @@ USAGE:
         Dip      = []
         Quad     = []
         Oct      = []
+        Hex      = []
         
         # nuclear moments
         for atom in self.molecule.atoms:
@@ -118,6 +121,9 @@ USAGE:
             Dip .append(MA)
             Quad.append(QA)
             Oct .append(OA)
+            if self.__if_hexadecapoles:
+               HA = ZA * outer(R,RRR).reshape(3,3,3,3)
+               Hex.append(HA)
             
         # electronic moments
         for LMO in xrange(nmos):
@@ -131,12 +137,18 @@ USAGE:
             Dip .append(dip)
             Quad.append(qdr)
             Oct .append(oct)
+            if self.__if_hexadecapoles:
+               hex = - 2* tensordot( A, tensordot(A, self.H,(0,4)), (0,4))
+               Hex.append(hex)
+
 
         # save LMTP
         self.Mon   = Mon
         self.Dip   = Dip
         self.Quad  = Quad
         self.Oct   = Oct
+        if self.__if_hexadecapoles:
+           self.Hex = Hex
         
         # clock measure
         self.clock.actualize('computing LMTP')
@@ -153,6 +165,7 @@ USAGE:
         Dip      = []
         Quad     = []
         Oct      = []
+        Hex      = []
         
         n = 0 # atom number
         ### [1] atomic moments
@@ -166,25 +179,33 @@ USAGE:
             MA = ZA * R
             QA = ZA * RR
             OA = ZA * RRR
+            if self.__if_hexadecapoles:
+               HA = ZA * outer(R,RRR).reshape(3,3,3,3)
+               Hex.append(HA)
+          
             for I in xrange(self.K):
                 i = self.LIST1[I]
                 for J in xrange(self.K):
                     j =  self.LIST1[J]
-                    if i==n==j:
+                    if ((i==n==j) or ((i==n and j!=i) and (not self.__IJ_are_bonded(i,j))) ):
                        qA -= self.P[I,J] * self.S[I,J]
                        MA -= self.P[I,J] * self.D[:,I,J]
                        QA -= self.P[I,J] * self.Q[:,:,I,J]
                        OA -= self.P[I,J] * self.O[:,:,:,I,J]
-                    elif ((i==n and j!=i) and (not self.__IJ_are_bonded(i,j))):
-                       qA -= self.P[I,J] * self.S[I,J]
-                       MA -= self.P[I,J] * self.D[:,I,J]
-                       QA -= self.P[I,J] * self.Q[:,:,I,J]
-                       OA -= self.P[I,J] * self.O[:,:,:,I,J]
+                       if self.__if_hexadecapoles:
+                          HA -= self.P[I,J] * self.H[:,:,:,:,I,J]
+                    #elif ((i==n and j!=i) and (not self.__IJ_are_bonded(i,j))):
+                    #   qA -= self.P[I,J] * self.S[I,J]
+                    #   MA -= self.P[I,J] * self.D[:,I,J]
+                    #   QA -= self.P[I,J] * self.Q[:,:,I,J]
+                    #   OA -= self.P[I,J] * self.O[:,:,:,I,J]
 
             Mon .append(qA)
             Dip .append(MA)
             Quad.append(QA)
             Oct .append(OA)
+            if self.__if_hexadecapoles:
+               Hex .append(HA)
             n+=1
             
         ### [2] bond moments
@@ -193,16 +214,21 @@ USAGE:
         MB  = {bond:zeros( 3     ,dtype=float64) for bond in self.bonds}
         QB  = {bond:zeros((3,3  ),dtype=float64) for bond in self.bonds}
         OB  = {bond:zeros((3,3,3),dtype=float64) for bond in self.bonds}
+        if self.__if_hexadecapoles:
+           HB  = {bond:zeros((3,3,3,3),dtype=float64) for bond in self.bonds}
         # code for python-2.6
         #qB = {}
         #MB = {}
         #QB = {}
         #OB = {}
+        #HB = {}
         #for bond in self.bonds:
         #    qB.update({bond:0})
         #    MB.update({bond:zeros( 3     ,dtype=float64)})
         #    QB.update({bond:zeros((3,3  ),dtype=float64)})
         #    OB.update({bond:zeros((3,3,3),dtype=float64)})
+        #    if self.__if_hexadecapoles:
+        #       HB.update({bond:zeros((3,3,3,3),dtype=float64)})
         #
         for bond in self.bonds:
             for I in xrange(self.K):
@@ -214,17 +240,23 @@ USAGE:
                         MB[bond] -= 2*self.P[I,J] * self.D[:,I,J]
                         QB[bond] -= 2*self.P[I,J] * self.Q[:,:,I,J]
                         OB[bond] -= 2*self.P[I,J] * self.O[:,:,:,I,J]
+                        if self.__if_hexadecapoles:
+                           HB[bond] -= 2*self.P[I,J] * self.H[:,:,:,:,I,J]
         # append the bond moments
         for bond in self.bonds:
             Mon .append( qB[bond] )
             Dip .append( MB[bond] )
             Quad.append( QB[bond] )
             Oct .append( OB[bond] )
+            if self.__if_hexadecapoles:
+               Hex .append( HB[bond] )
         # save C(A+B)MMS 
         self.Mon   = Mon
         self.Dip   = Dip
         self.Quad  = Quad
         self.Oct   = Oct
+        if self.__if_hexadecapoles:
+           self.Hex = Hex
  
         # clock measure
         if self.bonds: self.clock.actualize('computing C(A+B)MMs')
@@ -242,6 +274,7 @@ USAGE:
         Dip      = []
         Quad     = []
         Oct      = []
+        Hex      = []
         n = 0 # atom number
         for atom in self.molecule.atoms:
             if self.transition: q  = 0
@@ -249,6 +282,8 @@ USAGE:
             M  = zeros( 3,dtype=float64)
             Q  = zeros((3,3),dtype=float64)
             O  = zeros((3,3,3),dtype=float64)
+            if self.__if_hexadecapoles:
+               H = zeros((3,3,3,3),dtype=float64)
             R = array(atom.pos()) 
             for I in xrange(self.K):
                 if self.LIST1[I]==n:
@@ -278,18 +313,42 @@ USAGE:
                        #                 + RQ  + transpose(RQ ,axes=(1,2,0)) + transpose(RQ ,axes=(2,0,1))\
                        #                 - self.O[:,:,:,I,J] 
                        #                   )  
-
+                       if self.__if_hexadecapoles:
+                          for i in [0,1,2]:
+                              for j in [0,1,2]:
+                                  for k in [0,1,2]:
+                                      for l in [0,1,2]:
+                                          H[i,j,k,l] += self.P[I,J] * (- R[i] * R[j] * R[k] * R[l] * self.S[        I,J] 
+                                                                       + R[i] * R[j] * R[k]        * self.D[l,      I,J]
+                                                                       + R[i] * R[j] * R[l]        * self.D[k,      I,J]
+                                                                       + R[j] * R[k] * R[l]        * self.D[i,      I,J]
+                                                                       + R[i] * R[k] * R[l]        * self.D[j,      I,J]
+                                                                       - R[i] * R[j]               * self.Q[k,l,    I,J]
+                                                                       - R[i] * R[k]               * self.Q[j,l,    I,J]
+                                                                       - R[i] * R[l]               * self.Q[j,k,    I,J]
+                                                                       - R[j] * R[l]               * self.Q[i,k,    I,J]
+                                                                       - R[j] * R[k]               * self.Q[i,l,    I,J]
+                                                                       - R[k] * R[l]               * self.Q[i,j,    I,J]
+                                                                       + R[i]                      * self.O[j,k,l,  I,J]
+                                                                       + R[j]                      * self.O[i,k,l,  I,J]
+                                                                       + R[k]                      * self.O[i,j,l,  I,J]
+                                                                       + R[l]                      * self.O[i,j,k,  I,J]
+                                                                       -                             self.H[i,j,k,l,I,J])
 
             Mon .append(q)
             Dip .append(M)
             Quad.append(Q)
             Oct .append(O)
+            if self.__if_hexadecapoles:
+               Hex .append(H)
             n+=1
         # save CAMMS 
         self.Mon   = Mon
         self.Dip   = Dip
         self.Quad  = Quad
         self.Oct   = Oct
+        if self.__if_hexadecapoles:
+           self.Hex = Hex
  
         # clock measure
         self.clock.actualize('computing CAMMs')
@@ -394,7 +453,29 @@ basing on the self.bonds list of bonds.
         result.DMA[3][:,7] = array(self.Oct)[:,0,2,2]
         result.DMA[3][:,8] = array(self.Oct)[:,1,2,2]
         result.DMA[3][:,9] = array(self.Oct)[:,0,1,2]
+        #
+        if self.__if_hexadecapoles:
+           result.DMA[4][:, 0] = array(self.Hex)[:,0,0,0,0]
+           result.DMA[4][:, 1] = array(self.Hex)[:,1,1,1,1]
+           result.DMA[4][:, 2] = array(self.Hex)[:,2,2,2,2]
+           result.DMA[4][:, 3] = array(self.Hex)[:,0,0,0,1]
+           result.DMA[4][:, 4] = array(self.Hex)[:,0,0,0,2]
+           result.DMA[4][:, 5] = array(self.Hex)[:,1,1,1,0]
+           result.DMA[4][:, 6] = array(self.Hex)[:,1,1,1,2]
+           result.DMA[4][:, 7] = array(self.Hex)[:,2,2,2,0]
+           result.DMA[4][:, 8] = array(self.Hex)[:,2,2,2,1]
+           result.DMA[4][:, 9] = array(self.Hex)[:,0,0,1,1]
+           result.DMA[4][:,10] = array(self.Hex)[:,0,0,2,2]
+           result.DMA[4][:,11] = array(self.Hex)[:,1,1,2,2]
+           result.DMA[4][:,12] = array(self.Hex)[:,0,0,1,2]
+           result.DMA[4][:,13] = array(self.Hex)[:,1,1,0,2]
+           result.DMA[4][:,14] = array(self.Hex)[:,2,2,0,1]
+
         # finally change the origins from zeros to origins (for C(A+B)MMs and LMTP)
+        # tip: in the future CAMM should be rewritten in a vectorized manner as in CABMMs and LMTPs,
+        #      which are computed at the origin of global coordinate system [0,0,0] and then recentered 
+        #      to atomic or LMO centroid centers.
+        #      Therefore, changing origins would be done also for CAMMs.
         if change_origins:
            result.MAKE_FULL()
            result.ChangeOrigin(new_origin_set=self.origin)
@@ -405,7 +486,7 @@ basing on the self.bonds list of bonds.
         return
         
     def MU(self):
-        """calculate dipole moment""" 
+        """calculate molecular dipole moment""" 
         
         Mu = array([0,0,0],dtype=float64)
         # nuclear contribution
@@ -422,7 +503,7 @@ basing on the self.bonds list of bonds.
         return Mu
     
     def QUAD(self):
-        """calculate quadrupole moment"""
+        """calculate molecular quadrupole moment"""
         
         Quad = zeros( (3,3) ,dtype=float64)
         # nuclear contribution
@@ -442,7 +523,7 @@ basing on the self.bonds list of bonds.
         return Quad
 
     def OCT(self):
-        """calculate octupole moment"""
+        """calculate molecular octupole moment"""
         
         Oct = zeros( (3,3,3) ,dtype=float64)
         # nuclear contribution
@@ -464,6 +545,32 @@ basing on the self.bonds list of bonds.
         #self.makeTracelessOCT(Oct)
         return Oct 
 
+    def HEX(self):
+        """calculate molecular hexadecapole moment"""
+        
+        Hex = zeros( (3,3,3,3) ,dtype=float64)
+        # nuclear contribution
+        if not self.transition:
+           for atom in self.molecule.atoms:
+               Z = atom.atno
+               R = array(atom.pos())
+               for i in [0,1,2]:
+                   for j in [0,1,2]:
+                       for k in [0,1,2]:
+                           for l in [0,1,2]:
+                               Hex[i,j,k,l] += Z*R[i]*R[j]*R[k]*R[l]
+        # electronic contribution
+        for a in xrange(self.K):
+            for b in xrange(self.K):  
+                for i in [0,1,2]:
+                    for j in [0,1,2]:
+                        for k in [0,1,2]:
+                            for l in [0,1,2]:
+                                Hex[i,j,k,l] -= self.P[a,b] * self.H[i,j,k,l,a,b]
+        #self.makeTracelessHEX(Hex)
+        return Hex
+
+
     def makeTracelessOCT(self,O):
         W= zeros((3,3,3),dtype=float)
         W[:]= O
@@ -481,6 +588,58 @@ basing on the self.bonds list of bonds.
                     elif i!=j and j==k:
                          O[i,j,k]-= (1./2.) * Wt[i]
         return  
+
+    def makeTracelessHEX(self,H):
+        """
+Formula: 
+
+H_{ijkl}^{Traceless} = \frac{35}{8} H_{ijkl} 
+                     - \frac{5}{8} ( \delta_{ij} H_{00kl} + \delta_{ik} H_{00jl} + \delta_{il} H_{00jk} + 
+                                     \delta_{jk} H_{00il} + \delta_{jl} H_{00ik} + \delta_{kl} H_{00ij} )
+                     + \frac{1}{8} Tr^2(H) (\delta_{ij} \delta_{kl} + \delta_{ik} \delta_{jl} + \delta_{il} \delta_{jk})
+
+where 
+ 
+  H_{ijkl} refers to primitive hexadecapole moment tensor element
+
+
+       def.
+  Tr^2 ==== XXXX + YYYY + ZZZZ + 2 (XXYY + XXZZ + YYZZ)
+
+
+"""
+#        raise NotImplementedError, 'traceless hexadecapoles are not implemented yet!'
+        W = H.copy()
+        H *= (35./8.)
+        Wt = W.trace()
+        Wtt= W.trace().trace()
+        c = (5./8.)
+        for i in [0,1,2]:
+            for j in [0,1,2]:
+                for k in [0,1,2]:
+                    for l in [0,1,2]:
+                        if i==j==k==l:                 # AAAA
+                           H -= (15./4.) * Wt[i,i]       - 3.0 * Wtt
+                        elif i==j and k==l and i!=k:   # AABB
+                           H -= c * (Wt[i,i] + Wt[k,k])  - Wtt
+                        elif i==k and j==l and i!=j:   # ABAB
+                           H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
+                        elif i==l and j==k and i!=j:   # ABBA
+                           H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
+                        elif i==j and j!=k and k!=l:   # AABC
+                           H -= c * Wt[k,l]
+                        elif i!=j and j!=k and k==l:   # ABCC
+                           H -= c * Wt[i,j]
+                        elif i!=j and j==k and k!=l:   # ABBC
+                           H -= c * Wt[i,l]
+                        elif i!=j and i==k and k!=l:   # ABAC
+                           H -= c * Wt[j,l]
+                        elif i!=j and j!=k and j==l:   # ABCB
+                           H -= c * Wt[i,k]
+                        elif i==l and i!=j and j!=k:   # ABCA
+                           H -= c * Wt[j,k]
+        return  
+
     
     def makeTracelessCAMMs(self):
         """turns ordinary cartesian CAMMs into traceless cartesian CAMMs"""
@@ -507,13 +666,50 @@ basing on the self.bonds list of bonds.
                              O[i,j,k]-= (1./2.) * Wt[j]
                         elif i!=j and j==k:
                              O[i,j,k]-= (1./2.) * Wt[i]
+        # Hexadecapole moment
+        if self.__if_hexadecapoles:
+           #raise NotImplementedError, 'traceless hexadecapoles are not implemented yet!'
+           for H in self.Hex:
+               W = H.copy()
+               H *= (35./8.)
+               Wt = W.trace()
+               Wtt= W.trace().trace()
+               c = (5./8.)
+               for i in [0,1,2]:
+                   for j in [0,1,2]:
+                       for k in [0,1,2]:
+                           for l in [0,1,2]:
+                               if i==j==k==l:                 # AAAA
+                                  H -= (15./4.) * Wt[i,i]       - 3.0 * Wtt
+                               elif i==j and k==l and i!=k:   # AABB
+                                  H -= c * (Wt[i,i] + Wt[k,k])  - Wtt
+                               elif i==k and j==l and i!=j:   # ABAB
+                                  H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
+                               elif i==l and j==k and i!=j:   # ABBA
+                                  H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
+                               elif i==j and j!=k and k!=l:   # AABC
+                                  H -= c * Wt[k,l]
+                               elif i!=j and j!=k and k==l:   # ABCC
+                                  H -= c * Wt[i,j]
+                               elif i!=j and j==k and k!=l:   # ABBC
+                                  H -= c * Wt[i,l]
+                               elif i!=j and i==k and k!=l:   # ABAC
+                                  H -= c * Wt[j,l]
+                               elif i!=j and j!=k and j==l:   # ABCB
+                                  H -= c * Wt[i,k]
+                               elif i==l and i!=j and j!=k:   # ABCA
+                                  H -= c * Wt[j,k]
+
         self.clock.actualize('transformation to traceless tensors')
              
     
     def ReturnCAMMs(self):
         """returns CAMMs"""
-        
-        return self.RArray, self.Mon, self.Dip, self.Quad, self.Oct 
+       
+        if not self.__if_hexadecapoles: 
+           return self.RArray, self.Mon, self.Dip, self.Quad, self.Oct 
+        else:
+           return self.RArray, self.Mon, self.Dip, self.Quad, self.Oct, self.Hex
 
 
     def __printMMMs__(self):
@@ -577,7 +773,7 @@ basing on the self.bonds list of bonds.
  
         print log
 
-    def __printCAMMs__(self):
+    def __printCAMMs__(self):   # old printout form
         """
   .................................................................
   :                 W. A. SOKALSKI & R. A. POIRIER                :

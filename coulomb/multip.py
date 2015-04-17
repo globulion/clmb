@@ -38,7 +38,7 @@ USAGE:
     def __init__(self, molecule, basis, method,
                        matrix=None,multInts=None,transition=False,
                        bonds=None,vec=None,hexadecapoles=False):
-        RUN.__init__(self, molecule, basis, method,matrix,multInts)
+        RUN.__init__(self, molecule, basis, method, matrix, multInts, hexadecapoles)
         # LIST1 - the list of atoms in the order of basis functions used,
         # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis
         # LIST1 = 0    0    0    0    0    1    2
@@ -181,7 +181,6 @@ USAGE:
             OA = ZA * RRR
             if self.__if_hexadecapoles:
                HA = ZA * outer(R,RRR).reshape(3,3,3,3)
-               Hex.append(HA)
           
             for I in xrange(self.K):
                 i = self.LIST1[I]
@@ -257,7 +256,8 @@ USAGE:
         self.Oct   = Oct
         if self.__if_hexadecapoles:
            self.Hex = Hex
- 
+
+        print len(Dip), len(Quad), len(Hex) 
         # clock measure
         if self.bonds: self.clock.actualize('computing C(A+B)MMs')
         else:          self.clock.actualize('computing CAMMs')
@@ -454,6 +454,8 @@ basing on the self.bonds list of bonds.
         result.DMA[3][:,8] = array(self.Oct)[:,1,2,2]
         result.DMA[3][:,9] = array(self.Oct)[:,0,1,2]
         #
+        print array(self.Hex).shape
+        print self.origin.shape
         if self.__if_hexadecapoles:
            result.DMA[4][:, 0] = array(self.Hex)[:,0,0,0,0]
            result.DMA[4][:, 1] = array(self.Hex)[:,1,1,1,1]

@@ -25,6 +25,14 @@ class DO(PARSER):
         self.mtp_methods = []
         # interaction energy methods
         self.eint_methods = []
+        #
+        self.transition        = False
+        self.exchange          = False
+        self.has_hexadecapoles = False
+        self.cbamm             = False
+        self.svd               = False
+        self.stat              = False
+        self.Print             = False
         # --- search the tasks
         for task in self.tasks:
             # search the units
@@ -34,11 +42,9 @@ class DO(PARSER):
             if   'result' in task.lower():
                   self.result = self.search(task)[0]
             # transition 
-            self.transition = False
             if   'trans' in task.lower():
                   self.transition = self.search(task,bool)
             # exchange 
-            self.exchange = False
             if   'exch' in task.lower():
                   self.exchange = self.search(task,bool)
             # search for the interaction energy routines
@@ -48,29 +54,24 @@ class DO(PARSER):
             elif 'mtp' in task.lower():
                   self.mtp_methods = self.search(task)
             # search for switching on hexadecapole moments
-            self.has_hexadecapoles = False
             if   'hexad' in task.lower():
                   self.has_hexadecapoles = self.search(task,bool)
             # search for switching on CBAMM calculation
-            self.cbamm = False
             if   'bonds' in task.lower():
                   self.cbamm = self.search(task,bool)
             # search for esp features
             if   'pot' in task.lower():
                   self.pot = self.search(task)[0]
             # search for statistical evaluation of variational space for fitting
-            self.svd = False
             if   'svd' in task.lower():
                   self.svd = self.search(task,bool)
             # search for padding information for ESP fitting
             if   'pad' in task.lower():
                   self.pad = float(self.search(task)[0])
             # search for statistical evaluation
-            self.stat = False
             if   'stat' in task.lower():
                   self.stat = self.search(task,bool)
             # search for printing
-            self.Print = False
             if   'print' in task.lower():
                   self.Print = self.search(task,bool)
             # search for number of points per atom during ESP fit

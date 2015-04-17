@@ -20,7 +20,7 @@ verify the quality of charge fitting. All values in AU."""
    def __init__(self, molecule, basis, method, mpot=1000, pot='CAMM', pad=10, 
                       SVD=False, matrix=None, multInts=None, cnt=0.0100, 
                       stat=False, Print=True, transition=False):
-       RUN.__init__(self, molecule, basis, method, matrix, multInts)
+       RUN.__init__(self, molecule, basis, method, matrix, multInts, hexadecapoles=False)
        # transition 
        self.transition = transition
        # number of points for potential to be computed (total)

@@ -159,7 +159,7 @@ and multipole integrals (optional)."""
                     if dtype is not None:
                        dmat = ParseDmatFromFchk(dmat_file,type=dtype)
                     else:
-                       print " No density type specified! Add DTYPE=(SCF, MP2 or CC) in the same line with DMATRIX keyword. Quitting..."
+                       print " No density type specified! Add DTYPE=(SCF, MP2 or CC) keyword.\n Quitting...\n"
                        exit()
                  self.dmat_set.append(dmat)
                  break

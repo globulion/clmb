@@ -22,7 +22,7 @@ from util import *
 class RUN:
   """calculate basic variables and matrices""" 
   
-  def __init__(self,molecule,basis,method,matrix=0,multInts=0):
+  def __init__(self,molecule,basis,method,matrix=0,multInts=0,hexadecapoles=False):
      # start measuring time of action
      self.clock = TIMER()
      # molecule
@@ -64,7 +64,7 @@ class RUN:
     
      # calculate multipole integrals 
      if not multInts:
-        self.D,self.Q,self.O,self.H = getM(self.bfs) 
+        self.D,self.Q,self.O,self.H = getM(self.bfs,hexadecapoles=hexadecapoles) 
         self.clock.actualize('multipole integrals evaluation')
      else: 
         self.S,self.D,self.Q,self.O,self.H = multInts 

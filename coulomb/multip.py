@@ -420,7 +420,7 @@ basing on the self.bonds list of bonds.
         #   dip = array(dip)[newaxis]
         #   quad= array(quad)[newaxis]
         #   oct = array(oct)[newaxis]
-        result = DMA(nfrag=len(self.origin))
+        result = DMA(nfrag=len(self.origin), hexadecapoles=self.__if_hexadecapoles)
         result.set_name("%s --- %s %s/%s" % (self.molecule.name, self.operation,
                                              self.method, self.basis) )
         # in the case of C(A+B)MMs

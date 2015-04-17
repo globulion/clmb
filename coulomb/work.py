@@ -34,33 +34,49 @@ class DO(PARSER):
             if   'result' in task.lower():
                   self.result = self.search(task)[0]
             # transition 
+            self.transition = False
             if   'trans' in task.lower():
-                  self.transition = True
-            # state (if transition)
-            if   'trst' in task.lower():
-                  self.state = self.search(task)[0]
+                  self.transition = self.search(task,bool)
             # exchange 
+            self.exchange = False
             if   'exch' in task.lower():
-                  self.exchange = True  
+                  self.exchange = self.search(task,bool)
             # search for the interaction energy routines
             if   'eint' in task.lower():
                   self.eint_methods = self.search(task)
             # search for the multipole population routines
             elif 'mtp' in task.lower():
                   self.mtp_methods = self.search(task)
+            # search for switching on hexadecapole moments
+            self.has_hexadecapoles = False
+            if   'hexad' in task.lower():
+                  self.has_hexadecapoles = self.search(task,bool)
+            # search for switching on CBAMM calculation
+            self.cbamm = False
+            if   'bonds' in task.lower():
+                  self.cbamm = self.search(task,bool)
             # search for esp features
             if   'pot' in task.lower():
                   self.pot = self.search(task)[0]
+            # search for statistical evaluation of variational space for fitting
+            self.svd = False
             if   'svd' in task.lower():
-                  self.svd = bool(self.search(task)[0])
+                  self.svd = self.search(task,bool)
+            # search for padding information for ESP fitting
             if   'pad' in task.lower():
                   self.pad = float(self.search(task)[0])
+            # search for statistical evaluation
+            self.stat = False
             if   'stat' in task.lower():
-                  self.stat = bool(self.search(task)[0])
+                  self.stat = self.search(task,bool)
+            # search for printing
+            self.Print = False
             if   'print' in task.lower():
-                  self.Print = bool(self.search(task)[0])
+                  self.Print = self.search(task,bool)
+            # search for number of points per atom during ESP fit
             if   'mpoints' in task.lower(): 
                   self.mpot = int(self.search(task)[0])
+            # search for saving information
             if   'save' in task.lower():
                   self.outname = self.search(task)[0]
                   
@@ -100,15 +116,23 @@ class DO(PARSER):
             print "     ","-"*55
             print log
             print "     ","-"*55
+
+            # determine if bond moments should be computed or not
+            if not self.cbamm: self.bond_set[i] = None
+
             # use external multints and density matrix
             try:
                result = MULTIP(mol,self.basis,self.method,
                                matrix=self.dmat_set[i],
-                               transition=self.transition)
+                               transition=self.transition,
+                               bonds=self.bond_set[i],
+                               hexadecapoles=self.has_hexadecapoles)
             # calculate multints and density matrix using PyQuante
             except IndexError: 
                result = MULTIP(mol,self.basis,self.method,
-                               transition=self.transition)
+                               transition=self.transition,
+                               bonds=self.bond_set[i],
+                               hexadecapoles=self.has_hexadecapoles)
                
             if method.lower() == 'camm':
                  result.camms()
@@ -182,12 +206,16 @@ class DO(PARSER):
                    try:
                       result = MULTIP(mol,self.basis,self.method,
                                matrix=self.dmat_set[i],
-                               transition=self.transition)
+                               transition=self.transition,
+                               bonds=self.bond_set[i],
+                               hexadecapoles=self.has_hexadecapoles)
                       #print "holahola!",self.units
                    # calculate multints and density matrix using PyQuante
                    except IndexError: 
                       result = MULTIP(mol,self.basis,self.method,
-                               transition=self.transition)
+                               transition=self.transition,
+                               bonds=self.bond_set[i],
+                               hexadecapoles=self.has_hexadecapoles)
                    result.camms()
                    result.makeTracelessCAMMs()
                    result.__printCAMMs__()
@@ -240,9 +268,16 @@ class DO(PARSER):
                          exchange=self.exchange)
            print result
 
-    def search(self,task):
-        """withdraws the subtask. Format in the input file:
-               TASK=subtask1,subtask2[,...]"""
-        return task.split('=')[1].split(',')
+    def search(self,task,dtype=str):
+        """Withdraws the subtask. Format in the input file:
+TASK=subtask1,subtask2[,...]"""
+        t = task.split('=')[1].split(',')
+        if   dtype==str:                   return t
+        elif dtype==bool:
+             if   t[0].lower() == 'true' : return True
+             elif t[0].lower() == 'false': return False
+             elif t[0].lower() == '1'    : return True
+             elif t[0].lower() == '0'    : return False
+             else: raise ValueError, "Incorrect value for task %s" % task
 
 

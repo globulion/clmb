@@ -32,29 +32,31 @@ class PARSER:
                stat=False,
                pad=10,
                mpot=1000,
-               state=1,
                transition=False,
                exchange=False,
-               units='Angstroms',
-               dmat_file_type='gaussian'):
+               units='Angstroms'):
       ### --- defaults
       self.units = units
-      # density matrix file type
-      self.dmat_file_type = dmat_file_type
 
       # ESP options
-      self.pot = pot
-      self.svd = svd
-      self.Print = Print
-      self.stat = stat
-      self.pad = pad
-      self.mpot = mpot 
-      
+      self.pot     = pot
+      self.svd     = svd
+      self.Print   = Print
+      self.stat    = stat
+      self.pad     = pad
+      self.mpot    = mpot 
+
+      # CAMM settings
+      self.multints_set = list()
+      self.bond_set     = list()
+
       # Transition density matrix options
       self.transition = transition
-      self.state = state
+      self.states     = list()
+      self.dmat_set   = list()
+
       # K-integral correction for EEL(1)EDS
-      self.exchange = exchange
+      self.exchange = exchange   # ! exchange integrals not working properly!!!
       
       ### --- parse data form input
       self.text = open(file).readlines()
@@ -64,9 +66,9 @@ class PARSER:
       self.molecules()
 
   def method(self):
-      """parses method, basis of computation (common 
-      for all the molecules in the input file!) and 
-      tasks to be performed"""
+      """Parses method, basis of computation (common 
+for all the molecules in the input file!) and 
+tasks to be performed"""
       
       first = self.text[0]
       fp = re.compile('# *?([a-zA-Z0-9]*)\/([a-zA-Z0-9]*-?[a-zA-Z0-9|*|+|\(|\)|,]*)\s(.*)')
@@ -77,13 +79,11 @@ class PARSER:
       #self.state  = int(re.search('(?<=state=)[0-9]*', first).group(0))
 
   def molecules(self):
-      """withdraws molecular specifications:
-         multiplicity, charge, coordinates, density matrix (optional) 
-         and multipole integrals (optional)."""
+      """Withdraws molecular specifications:
+multiplicity, charge, coordinates, density matrix (optional) 
+and multipole integrals (optional)."""
          
-      self.dmat_set = []
-      self.multints_set = [] 
-      nat = {'H': 1, 'He': 2, 'Li': 3, 'C': 6, 'N': 7, 'O': 8, 'F': 9}
+      nat = {'H': 1, 'He': 2, 'Li': 3, 'C': 6, 'N': 7, 'O': 8, 'F': 9, 'Na':11, 'S':16, 'Cl':17 }
       # search atomic coorinates
       cp = re.compile('([a-zA-Z]*) *(-?\d*\.\d*) *(-?\d*\.\d*) *(-?\d*\.\d*).*')
       # search multiplicity and charge
@@ -104,8 +104,9 @@ class PARSER:
                 r+=y
           m.append(r.split('\n'))
           i=1
+
       # read molecular data
-      for a in m:
+      for ia, a in enumerate(m):
           name = a[0]
           coords= []
           # multiplicity and charge
@@ -124,29 +125,58 @@ class PARSER:
                  coords.append(coord)
           mol1 = Molecule('%s' % name,coords,multiplicity=multiplicity,charge=charge,units=self.units)
           M.append(mol1)
-          # try to read molecular density matrix and overlap matrix 
+
+          # read electronic state
           for line in a:
               if line.startswith('STATE='):
-                 self.state=int(line.split('=')[-1])
+                 self.states.append( int(line.split('=')[-1]) )
                  break
+
+          # read molecular density matrix
           for line in a:
               if line.startswith('DMATRIX='):
-                 dmat = read_transition_dmatrix(
-                            matrix_querry='Alpha transition density to state',
-                            filetype=self.dmat_file_type,file=line.split('=')[-1],
-                            state=self.state)
-                
-                 dmat+= read_transition_dmatrix(
-                            matrix_querry='Beta transition density to state',
-                            filetype=self.dmat_file_type,file=line.split('=')[-1],
-                            state=self.state)
-                 dmat=sqrt(2.0)*0.5*dmat # due to normalization of coeffs in gaussian to 1/2
+                 dmat_file = line.split('=')[1]
+                 
+                 # read the type of density (SCF, MP2 or CC)
+                 for line1 in a:
+                     dtype = None
+                     if 'DTYPE=' in line1: 
+                         dtype = line1.split('=')[-1]
+                         break
 
+                 if self.transition:
+                    dmat = read_transition_dmatrix(                                             
+                               matrix_querry='Alpha transition density to state',
+                               filetype='gaussian',file=dmat_file,
+                               state=self.states[ia])
+                                                                                                
+                    dmat+= read_transition_dmatrix(
+                               matrix_querry='Beta transition density to state',
+                               filetype='gaussian',file=dmat_file,
+                               state=self.state[ia])
+                    dmat=sqrt(2.0)*0.5*dmat # due to normalization of coeffs in gaussian to 1/2
+                 else:
+                    if dtype is not None:
+                       dmat = ParseDmatFromFchk(dmat_file,type=dtype)
+                    else:
+                       print " No density type specified! Add DTYPE=(SCF, MP2 or CC) in the same line with DMATRIX keyword. Quitting..."
+                       exit()
                  self.dmat_set.append(dmat)
                  break
+
+          # read connectivity 
+          bonds = False
+          for line in a:
+              if line.startswith('BONDS='):
+                 bonds = True
+                 self.bond_set.append( [ tuple(array(x.split(','),int)-1) for x in line.split('=')[-1].split(':') ] )
+                 break
+          if not bonds: self.bond_set.append( None )
+
           # read molecular multipole integrals
           for line in a:
               if line.startswith('MULTINTS='):
+                 raise NotImplementedError, "Reading multipole integrals in not implemented yet! All integrals are as for now evaluated by PyQuante-Mod."
                  self.multints_set.append([])
                  break
                 

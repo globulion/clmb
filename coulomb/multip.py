@@ -257,7 +257,6 @@ USAGE:
         if self.__if_hexadecapoles:
            self.Hex = Hex
 
-        print len(Dip), len(Quad), len(Hex) 
         # clock measure
         if self.bonds: self.clock.actualize('computing C(A+B)MMs')
         else:          self.clock.actualize('computing CAMMs')
@@ -266,7 +265,7 @@ USAGE:
         self.__make_dma(change_origins=True)
         return
                 
-    def __camms(self):
+    def __camms(self, old_code=False):
         """calculate CAMMs"""
         self.operation = 'CAMM'
 
@@ -275,73 +274,111 @@ USAGE:
         Quad     = []
         Oct      = []
         Hex      = []
-        n = 0 # atom number
-        for atom in self.molecule.atoms:
-            if self.transition: q  = 0
-            else:               q  = atom.atno
-            M  = zeros( 3,dtype=float64)
-            Q  = zeros((3,3),dtype=float64)
-            O  = zeros((3,3,3),dtype=float64)
-            if self.__if_hexadecapoles:
-               H = zeros((3,3,3,3),dtype=float64)
-            R = array(atom.pos()) 
-            for I in xrange(self.K):
-                if self.LIST1[I]==n:
-                   for J in xrange(self.K):
-                       q -= self.P[I,J] * self.S[I,J]
-                       M += self.P[I,J] * ( self.S[I,J] * R - self.D[:,I,J] )
-                       for i in [0,1,2]:
-                           for j in [0,1,2]:
-                               Q[i,j] += self.P[I,J] * ( R[i] * self.D[j,I,J] + R[j] * self.D[i,I,J] -R[i] * R[j] * self.S[I,J] - self.Q[i,j,I,J] )
-                       #Q += self.P[I,J] * (\
-                       #                   outer(R,self.D[:,I,J]) + transpose(outer(R,self.D[:,I,J]),axes=(1,0)) \
-                       #                 - outer(R,R) * self.S[I,J] - self.Q[:,:,I,J]                  \
-                       #                   )
-                       for i in [0,1,2]:
-                           for j in [0,1,2]:
-                               for k in [0,1,2]:
-                                   O[i,j,k] += self.P[I,J] * ( R[i] * R[j] * R[k] * self.S[I,J] - R[i] * R[j] * self.D[k,I,J] 
-                                                           - R[i] * R[k] * self.D[j,I,J] - R[k] * R[j] * self.D[i,I,J] 
-                                                           + R[i] * self.Q[j,k,I,J] + R[j] * self.Q[k,i,I,J] + R[k] * self.Q[i,j,I,J] 
-                                                           - self.O[i,j,k,I,J] )
-                       #R2 = outer(R,R)
-                       #R2D= array_outer_product_2_1(R2,self.D[:,I,J])
-                       #RQ = array_outer_product_1_2(R,self.Q[:,:,I,J])
-                       #O += self.P[I,J] * (\
-                       #                   array_outer_product_1_2(R,outer(R,R)) * self.S[I,J] \
-                       #                 - R2D - transpose(R2D,axes=(0,2,1)) - transpose(R2D,axes=(2,1,0))\
-                       #                 + RQ  + transpose(RQ ,axes=(1,2,0)) + transpose(RQ ,axes=(2,0,1))\
-                       #                 - self.O[:,:,:,I,J] 
-                       #                   )  
-                       if self.__if_hexadecapoles:
+        n = 0    # atom number
+
+        if old_code:
+           for atom in self.molecule.atoms:                                                                                                            
+               if self.transition: q  = 0
+               else:               q  = atom.atno
+               M  = zeros( 3,dtype=float64)
+               Q  = zeros((3,3),dtype=float64)
+               O  = zeros((3,3,3),dtype=float64)
+               if self.__if_hexadecapoles:
+                  H = zeros((3,3,3,3),dtype=float64)
+               R = array(atom.pos()) 
+               for I in xrange(self.K):
+                   if self.LIST1[I]==n:
+                      for J in xrange(self.K):
+                          q -= self.P[I,J] * self.S[I,J]
+                          M += self.P[I,J] * ( self.S[I,J] * R - self.D[:,I,J] )
+                          for i in [0,1,2]:
+                              for j in [0,1,2]:
+                                  Q[i,j] += self.P[I,J] * ( R[i] * self.D[j,I,J] + R[j] * self.D[i,I,J] -R[i] * R[j] * self.S[I,J] - self.Q[i,j,I,J] )
+                          #Q += self.P[I,J] * (\
+                          #                   outer(R,self.D[:,I,J]) + transpose(outer(R,self.D[:,I,J]),axes=(1,0)) \
+                          #                 - outer(R,R) * self.S[I,J] - self.Q[:,:,I,J]                  \
+                          #                   )
                           for i in [0,1,2]:
                               for j in [0,1,2]:
                                   for k in [0,1,2]:
-                                      for l in [0,1,2]:
-                                          H[i,j,k,l] += self.P[I,J] * (- R[i] * R[j] * R[k] * R[l] * self.S[        I,J] 
-                                                                       + R[i] * R[j] * R[k]        * self.D[l,      I,J]
-                                                                       + R[i] * R[j] * R[l]        * self.D[k,      I,J]
-                                                                       + R[j] * R[k] * R[l]        * self.D[i,      I,J]
-                                                                       + R[i] * R[k] * R[l]        * self.D[j,      I,J]
-                                                                       - R[i] * R[j]               * self.Q[k,l,    I,J]
-                                                                       - R[i] * R[k]               * self.Q[j,l,    I,J]
-                                                                       - R[i] * R[l]               * self.Q[j,k,    I,J]
-                                                                       - R[j] * R[l]               * self.Q[i,k,    I,J]
-                                                                       - R[j] * R[k]               * self.Q[i,l,    I,J]
-                                                                       - R[k] * R[l]               * self.Q[i,j,    I,J]
-                                                                       + R[i]                      * self.O[j,k,l,  I,J]
-                                                                       + R[j]                      * self.O[i,k,l,  I,J]
-                                                                       + R[k]                      * self.O[i,j,l,  I,J]
-                                                                       + R[l]                      * self.O[i,j,k,  I,J]
-                                                                       -                             self.H[i,j,k,l,I,J])
+                                      O[i,j,k] += self.P[I,J] * ( R[i] * R[j] * R[k] * self.S[I,J] - R[i] * R[j] * self.D[k,I,J] 
+                                                              - R[i] * R[k] * self.D[j,I,J] - R[k] * R[j] * self.D[i,I,J] 
+                                                              + R[i] * self.Q[j,k,I,J] + R[j] * self.Q[k,i,I,J] + R[k] * self.Q[i,j,I,J] 
+                                                              - self.O[i,j,k,I,J] )
+                          #R2 = outer(R,R)
+                          #R2D= array_outer_product_2_1(R2,self.D[:,I,J])
+                          #RQ = array_outer_product_1_2(R,self.Q[:,:,I,J])
+                          #O += self.P[I,J] * (\
+                          #                   array_outer_product_1_2(R,outer(R,R)) * self.S[I,J] \
+                          #                 - R2D - transpose(R2D,axes=(0,2,1)) - transpose(R2D,axes=(2,1,0))\
+                          #                 + RQ  + transpose(RQ ,axes=(1,2,0)) + transpose(RQ ,axes=(2,0,1))\
+                          #                 - self.O[:,:,:,I,J] 
+                          #                   )  
+                          if self.__if_hexadecapoles:
+                             for i in [0,1,2]:
+                                 for j in [0,1,2]:
+                                     for k in [0,1,2]:
+                                         for l in [0,1,2]:
+                                             H[i,j,k,l] += self.P[I,J] * (- R[i] * R[j] * R[k] * R[l] * self.S[        I,J] 
+                                                                          + R[i] * R[j] * R[k]        * self.D[l,      I,J]
+                                                                          + R[i] * R[j] * R[l]        * self.D[k,      I,J]
+                                                                          + R[j] * R[k] * R[l]        * self.D[i,      I,J]
+                                                                          + R[i] * R[k] * R[l]        * self.D[j,      I,J]
+                                                                          - R[i] * R[j]               * self.Q[k,l,    I,J]
+                                                                          - R[i] * R[k]               * self.Q[j,l,    I,J]
+                                                                          - R[i] * R[l]               * self.Q[j,k,    I,J]
+                                                                          - R[j] * R[l]               * self.Q[i,k,    I,J]
+                                                                          - R[j] * R[k]               * self.Q[i,l,    I,J]
+                                                                          - R[k] * R[l]               * self.Q[i,j,    I,J]
+                                                                          + R[i]                      * self.O[j,k,l,  I,J]
+                                                                          + R[j]                      * self.O[i,k,l,  I,J]
+                                                                          + R[k]                      * self.O[i,j,l,  I,J]
+                                                                          + R[l]                      * self.O[i,j,k,  I,J]
+                                                                          -                             self.H[i,j,k,l,I,J])
+                                                                                                                                                       
+               Mon .append(q)
+               Dip .append(M)
+               Quad.append(Q)
+               Oct .append(O)
+               if self.__if_hexadecapoles:
+                  Hex .append(H)
+               n+=1
+        # newer, much much faster code similar to old CABMM code
+        else:  
+            for atom in self.molecule.atoms:
+                if self.transition: qA  = 0
+                else:               qA  = atom.atno
+                ZA = atom.atno
+                R  = array(atom.pos())
+                RR = outer(R,R)
+                RRR= outer(R,outer(R,R)).reshape(3,3,3)
+                MA = ZA * R
+                QA = ZA * RR
+                OA = ZA * RRR
+                if self.__if_hexadecapoles:
+                   HA = ZA * outer(R,RRR).reshape(3,3,3,3)
+              
+                for I in xrange(self.K):
+                    i = self.LIST1[I]
+                    if i==n:
+                       for J in xrange(self.K): 
+                           j =  self.LIST1[J]
 
-            Mon .append(q)
-            Dip .append(M)
-            Quad.append(Q)
-            Oct .append(O)
-            if self.__if_hexadecapoles:
-               Hex .append(H)
-            n+=1
+                           qA -= self.P[I,J] * self.S[I,J]
+                           MA -= self.P[I,J] * self.D[:,I,J]
+                           QA -= self.P[I,J] * self.Q[:,:,I,J]
+                           OA -= self.P[I,J] * self.O[:,:,:,I,J]
+                           if self.__if_hexadecapoles:
+                              HA -= self.P[I,J] * self.H[:,:,:,:,I,J]
+                                                                                                  
+                Mon .append(qA)
+                Dip .append(MA)
+                Quad.append(QA)
+                Oct .append(OA)
+                if self.__if_hexadecapoles:
+                   Hex .append(HA)
+                n+=1
+           
         # save CAMMS 
         self.Mon   = Mon
         self.Dip   = Dip
@@ -354,7 +391,8 @@ USAGE:
         self.clock.actualize('computing CAMMs')
 
         # create the DMA object for calculated property
-        self.__make_dma(change_origins=False)
+        if old_code: self.__make_dma(change_origins=False)
+        else:        self.__make_dma(change_origins=True )
         return
 
     def __IJ_are_bonded(self,I,J):
@@ -454,8 +492,6 @@ basing on the self.bonds list of bonds.
         result.DMA[3][:,8] = array(self.Oct)[:,1,2,2]
         result.DMA[3][:,9] = array(self.Oct)[:,0,1,2]
         #
-        print array(self.Hex).shape
-        print self.origin.shape
         if self.__if_hexadecapoles:
            result.DMA[4][:, 0] = array(self.Hex)[:,0,0,0,0]
            result.DMA[4][:, 1] = array(self.Hex)[:,1,1,1,1]

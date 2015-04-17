@@ -169,7 +169,7 @@ and multipole integrals (optional)."""
           for line in a:
               if line.startswith('BONDS='):
                  bonds = True
-                 self.bond_set.append( [ tuple(array(x.split(','),int)-1) for x in line.split('=')[-1].split(':') ] )
+                 self.bond_set.append( [ tuple(array(x.split('-'),int)-1) for x in line.split('=')[-1].split(':') ] )
                  break
           if not bonds: self.bond_set.append( None )
 

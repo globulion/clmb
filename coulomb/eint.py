@@ -57,7 +57,7 @@ in a.u."""
             Eint+=q1[i]*q2[j]/numpy.sqrt(numpy.sum((r1[i]-r2[j])**2))
     return Eint
 
-def Eelcamm(camm1,camm2,converter=1.0):#UNITS.HartreePerHbarToCmRec):
+def Eelcamm(camm1,camm2,converter=UNITS.HartreePerHbarToCmRec):
     """calculates E(EL)MTP from two CAMM distributions.
 camm1 and camm2 are the objects of the class MULT after 
 performing the 'camms()' method on them. Calculations are

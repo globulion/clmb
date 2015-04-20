@@ -26,7 +26,6 @@ class DO(PARSER):
         # interaction energy methods
         self.eint_methods = []
         #
-        self.transition        = False
         self.exchange          = False
         self.has_hexadecapoles = False
         self.cbamm             = False
@@ -41,9 +40,6 @@ class DO(PARSER):
             # search the unit converter for final result
             if   'result' in task.lower():
                   self.result = self.search(task)[0]
-            # transition 
-            if   'trans' in task.lower():
-                  self.transition = self.search(task,bool)
             # exchange 
             if   'exch' in task.lower():
                   self.exchange = self.search(task,bool)
@@ -80,7 +76,7 @@ class DO(PARSER):
             # search for saving information
             if   'save' in task.lower():
                   self.outname = self.search(task)[0]
-                  
+
         # ---- DO! ----
         # multipole population calculations
         if self.mtp_methods:
@@ -125,13 +121,13 @@ class DO(PARSER):
             try:
                result = MULTIP(mol,self.basis,self.method,
                                matrix=self.dmat_set[i],
-                               transition=self.transition,
+                               transition=self.transition_set[i],
                                bonds=self.bond_set[i],
                                hexadecapoles=self.has_hexadecapoles)
             # calculate multints and density matrix using PyQuante
             except IndexError: 
                result = MULTIP(mol,self.basis,self.method,
-                               transition=self.transition,
+                               transition=self.transition_set[i],
                                bonds=self.bond_set[i],
                                hexadecapoles=self.has_hexadecapoles)
                
@@ -161,7 +157,7 @@ class DO(PARSER):
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
                                    matrix=self.dmat_set[i],
-                                   transition=self.transition)
+                                   transition=self.transition_set[i])
                       dma = DMA(nfrag=len(mol.atoms))
                       dma.set_moments(charges=result.charges)
                       dma.set_structure(pos=mol.get_pos(),equal=True)
@@ -172,7 +168,7 @@ class DO(PARSER):
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
-                                   transition=self.transition)
+                                   transition=self.transition_set[i])
                       dma = DMA(nfrag=len(mol.atoms))
                       dma.set_moments(charges=result.charges)
                       dma.set_structure(pos=mol.get_pos(),equal=True)
@@ -207,14 +203,14 @@ class DO(PARSER):
                    try:
                       result = MULTIP(mol,self.basis,self.method,
                                matrix=self.dmat_set[i],
-                               transition=self.transition,
+                               transition=self.transition_set[i],
                                bonds=self.bond_set[i],
                                hexadecapoles=self.has_hexadecapoles)
                       #print "holahola!",self.units
                    # calculate multints and density matrix using PyQuante
                    except IndexError: 
                       result = MULTIP(mol,self.basis,self.method,
-                               transition=self.transition,
+                               transition=self.transition_set[i],
                                bonds=self.bond_set[i],
                                hexadecapoles=self.has_hexadecapoles)
                    result.camms()
@@ -227,12 +223,12 @@ class DO(PARSER):
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
                                    matrix=self.dmat_set[i],
-                                   transition=self.transition) 
+                                   transition=self.transition_set[i]) 
                    except IndexError: 
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
-                                   transition=self.transition) 
+                                   transition=self.transition_set[i]) 
               results.append(result)
               #result.clock.__print__()
 
@@ -260,12 +256,12 @@ class DO(PARSER):
                          self.basis,self.method,
                          matrixa=self.dmat_set[0],
                          matrixb=self.dmat_set[1],
-                         transition=self.transition,
+                         transition=self.transition_set[i],
                          exchange=self.exchange)
            except IndexError: 
               result = EELEDS(self.M[0],self.M[1],
                          self.basis,self.method,
-                         transition=self.transition,
+                         transition=self.transition_set[i],
                          exchange=self.exchange)
            print result
 

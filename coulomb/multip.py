@@ -57,7 +57,7 @@ USAGE:
         self.pos, self.origin = self.__make_pos()
         self.__dma_bin = []
         self.operation = 'None'
-        self.__if_hexadecapoles = hexadecapoles
+        self.has_hexadecapoles = hexadecapoles
 
     def get(self):
         """returns the DMA objects from all the runs"""
@@ -69,7 +69,7 @@ USAGE:
         self.DipoleMoment    = self.MU()
         self.QuarupoleMoment = self.QUAD()
         self.OctupoleMoment  = self.OCT()
-        if self.__if_hexadecapoles: 
+        if self.has_hexadecapoles: 
            self.HexadecapoleMoment = self.HEX()
         self.operation = 'MMM'
         self.clock.actualize("calculation of MMMs")
@@ -96,8 +96,6 @@ USAGE:
         return
 
 
-    def if_hexadecapoles(self): return self.__if_hexadecapoles
-
     def __lmtp(self):
         """calculate LMTP distribution"""
         self.operation = 'LMTP'
@@ -113,20 +111,20 @@ USAGE:
         for atom in self.molecule.atoms:
             if self.transition: qA  = 0
             else:               qA  = atom.atno
-            ZA = atom.atno
+            qA = atom.atno
             R  = numpy.array(atom.pos())
             RR = numpy.outer(R,R)
             RRR= numpy.outer(R,numpy.outer(R,R)).reshape(3,3,3)
-            MA = ZA * R
-            QA = ZA * RR
-            OA = ZA * RRR
+            MA = qA * R
+            QA = qA * RR
+            OA = qA * RRR
             #
             Mon .append(qA)
             Dip .append(MA)
             Quad.append(QA)
             Oct .append(OA)
-            if self.__if_hexadecapoles:
-               HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
+            if self.has_hexadecapoles:
+               HA = qA * numpy.outer(R,RRR).reshape(3,3,3,3)
                Hex.append(HA)
             
         # electronic moments
@@ -141,7 +139,7 @@ USAGE:
             Dip .append(dip)
             Quad.append(qdr)
             Oct .append(oct)
-            if self.__if_hexadecapoles:
+            if self.has_hexadecapoles:
                hex = - 2* numpy.tensordot( A, numpy.tensordot(A, self.H,(0,4)), (0,4))
                Hex.append(hex)
 
@@ -151,7 +149,7 @@ USAGE:
         self.Dip   = Dip
         self.Quad  = Quad
         self.Oct   = Oct
-        if self.__if_hexadecapoles:
+        if self.has_hexadecapoles:
            self.Hex = Hex
         
         # clock measure
@@ -183,7 +181,7 @@ USAGE:
             MA = ZA * R
             QA = ZA * RR
             OA = ZA * RRR
-            if self.__if_hexadecapoles:
+            if self.has_hexadecapoles:
                HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
           
             for I in xrange(self.K):
@@ -195,7 +193,7 @@ USAGE:
                        MA -= self.P[I,J] * self.D[:,I,J]
                        QA -= self.P[I,J] * self.Q[:,:,I,J]
                        OA -= self.P[I,J] * self.O[:,:,:,I,J]
-                       if self.__if_hexadecapoles:
+                       if self.has_hexadecapoles:
                           HA -= self.P[I,J] * self.H[:,:,:,:,I,J]
                     #elif ((i==n and j!=i) and (not self.__IJ_are_bonded(i,j))):
                     #   qA -= self.P[I,J] * self.S[I,J]
@@ -207,7 +205,7 @@ USAGE:
             Dip .append(MA)
             Quad.append(QA)
             Oct .append(OA)
-            if self.__if_hexadecapoles:
+            if self.has_hexadecapoles:
                Hex .append(HA)
             n+=1
             
@@ -217,7 +215,7 @@ USAGE:
         MB  = {bond:numpy.zeros( 3     ,dtype=numpy.float64) for bond in self.bonds}
         QB  = {bond:numpy.zeros((3,3  ),dtype=numpy.float64) for bond in self.bonds}
         OB  = {bond:numpy.zeros((3,3,3),dtype=numpy.float64) for bond in self.bonds}
-        if self.__if_hexadecapoles:
+        if self.has_hexadecapoles:
            HB  = {bond:numpy.zeros((3,3,3,3),dtype=numpy.float64) for bond in self.bonds}
         # code for python-2.6
         #qB = {}
@@ -230,7 +228,7 @@ USAGE:
         #    MB.update({bond:numpy.zeros( 3     ,dtype=numpy.float64)})
         #    QB.update({bond:numpy.zeros((3,3  ),dtype=numpy.float64)})
         #    OB.update({bond:numpy.zeros((3,3,3),dtype=numpy.float64)})
-        #    if self.__if_hexadecapoles:
+        #    if self.has_hexadecapoles:
         #       HB.update({bond:numpy.zeros((3,3,3,3),dtype=numpy.float64)})
         #
         for bond in self.bonds:
@@ -243,7 +241,7 @@ USAGE:
                         MB[bond] -= 2*self.P[I,J] * self.D[:,I,J]
                         QB[bond] -= 2*self.P[I,J] * self.Q[:,:,I,J]
                         OB[bond] -= 2*self.P[I,J] * self.O[:,:,:,I,J]
-                        if self.__if_hexadecapoles:
+                        if self.has_hexadecapoles:
                            HB[bond] -= 2*self.P[I,J] * self.H[:,:,:,:,I,J]
         # append the bond moments
         for bond in self.bonds:
@@ -251,14 +249,14 @@ USAGE:
             Dip .append( MB[bond] )
             Quad.append( QB[bond] )
             Oct .append( OB[bond] )
-            if self.__if_hexadecapoles:
+            if self.has_hexadecapoles:
                Hex .append( HB[bond] )
         # save C(A+B)MMS 
         self.Mon   = Mon
         self.Dip   = Dip
         self.Quad  = Quad
         self.Oct   = Oct
-        if self.__if_hexadecapoles:
+        if self.has_hexadecapoles:
            self.Hex = Hex
 
         # clock measure
@@ -287,7 +285,7 @@ USAGE:
                M  = numpy.zeros( 3,dtype=numpy.float64)
                Q  = numpy.zeros((3,3),dtype=numpy.float64)
                O  = numpy.zeros((3,3,3),dtype=numpy.float64)
-               if self.__if_hexadecapoles:
+               if self.has_hexadecapoles:
                   H = numpy.zeros((3,3,3,3),dtype=numpy.float64)
                R = numpy.array(atom.pos()) 
                for I in xrange(self.K):
@@ -318,7 +316,7 @@ USAGE:
                           #                 + RQ  + transpose(RQ ,axes=(1,2,0)) + transpose(RQ ,axes=(2,0,1))\
                           #                 - self.O[:,:,:,I,J] 
                           #                   )  
-                          if self.__if_hexadecapoles:
+                          if self.has_hexadecapoles:
                              for i in [0,1,2]:
                                  for j in [0,1,2]:
                                      for k in [0,1,2]:
@@ -344,7 +342,7 @@ USAGE:
                Dip .append(M)
                Quad.append(Q)
                Oct .append(O)
-               if self.__if_hexadecapoles:
+               if self.has_hexadecapoles:
                   Hex .append(H)
                n+=1
         # newer, much much faster code similar to old CABMM code
@@ -352,16 +350,15 @@ USAGE:
             for atom in self.molecule.atoms:
                 if self.transition: qA  = 0
                 else:               qA  = atom.atno
-                ZA = atom.atno
                 R  = numpy.array(atom.pos())
                 RR = numpy.outer(R,R)
                 RRR= numpy.outer(R,numpy.outer(R,R)).reshape(3,3,3)
-                MA = ZA * R
-                QA = ZA * RR
-                OA = ZA * RRR
-                if self.__if_hexadecapoles:
-                   HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
-              
+                MA = qA * R
+                QA = qA * RR
+                OA = qA * RRR
+                if self.has_hexadecapoles:
+                   HA = qA * numpy.outer(R,RRR).reshape(3,3,3,3)
+
                 for I in xrange(self.K):
                     i = self.LIST1[I]
                     if i==n:
@@ -372,14 +369,14 @@ USAGE:
                            MA -= self.P[I,J] * self.D[:,I,J]
                            QA -= self.P[I,J] * self.Q[:,:,I,J]
                            OA -= self.P[I,J] * self.O[:,:,:,I,J]
-                           if self.__if_hexadecapoles:
+                           if self.has_hexadecapoles:
                               HA -= self.P[I,J] * self.H[:,:,:,:,I,J]
                                                                                                   
                 Mon .append(qA)
                 Dip .append(MA)
                 Quad.append(QA)
                 Oct .append(OA)
-                if self.__if_hexadecapoles:
+                if self.has_hexadecapoles:
                    Hex .append(HA)
                 n+=1
            
@@ -388,7 +385,7 @@ USAGE:
         self.Dip   = Dip
         self.Quad  = Quad
         self.Oct   = Oct
-        if self.__if_hexadecapoles:
+        if self.has_hexadecapoles:
            self.Hex = Hex
  
         # clock measure
@@ -462,7 +459,7 @@ basing on the self.bonds list of bonds.
         #   dip = numpy.array(dip)[newaxis]
         #   quad= numpy.array(quad)[newaxis]
         #   oct = numpy.array(oct)[newaxis]
-        result = libbbg.dma.DMA(nfrag=len(self.origin), hexadecapoles=self.__if_hexadecapoles)
+        result = libbbg.dma.DMA(nfrag=len(self.origin), hexadecapoles=self.has_hexadecapoles)
         result.set_name("%s --- %s %s/%s" % (self.molecule.name, self.operation,
                                              self.method, self.basis) )
         # in the case of C(A+B)MMs
@@ -496,7 +493,7 @@ basing on the self.bonds list of bonds.
         result.DMA[3][:,8] = numpy.array(self.Oct)[:,1,2,2]
         result.DMA[3][:,9] = numpy.array(self.Oct)[:,0,1,2]
         #
-        if self.__if_hexadecapoles:
+        if self.has_hexadecapoles:
            result.DMA[4][:, 0] = numpy.array(self.Hex)[:,0,0,0,0]
            result.DMA[4][:, 1] = numpy.array(self.Hex)[:,1,1,1,1]
            result.DMA[4][:, 2] = numpy.array(self.Hex)[:,2,2,2,2]
@@ -521,7 +518,15 @@ basing on the self.bonds list of bonds.
         if change_origins:
            result.MAKE_FULL()
            result.ChangeOrigin(new_origin_set=self.origin)
-           
+       
+           # save the memorials after recenterization  
+           result.MAKE_FULL()
+           self.Dip = result.DMA_FULL[2]
+           self.Quad= result.DMA_FULL[3]
+           self.Oct = result.DMA_FULL[4]
+           if self.has_hexadecapoles:
+              self.Hex = result.DMA_FULL[5] 
+
         result.set_structure(pos=self.pos)
         self.__dma_bin.append(result)
         
@@ -656,7 +661,7 @@ where
         Wtt= W.trace().trace()
         c = (5./8.)
         p = (1./8.)
-        d = numpy.identity(3,numpy.numpy.float64)
+        d = numpy.identity(3,numpy.float64)
         for i in [0,1,2]:
             for j in [0,1,2]:
                 for k in [0,1,2]:
@@ -716,7 +721,7 @@ where
                         elif i!=j and j==k:
                              O[i,j,k]-= (1./2.) * Wt[i]
         # Hexadecapole moment
-        if self.__if_hexadecapoles:
+        if self.has_hexadecapoles:
            #raise NotImplementedError, 'traceless hexadecapoles are not implemented yet!'
            for H in self.Hex:
                W = H.copy()
@@ -725,7 +730,7 @@ where
                Wtt= W.trace().trace()
                c = (5./8.)
                p = (1./8.)                                                                                    
-               d = numpy.identity(3,numpy.numpy.float64)
+               d = numpy.identity(3,numpy.float64)
                for i in [0,1,2]:
                    for j in [0,1,2]:
                        for k in [0,1,2]:
@@ -740,7 +745,7 @@ where
     def ReturnCAMMs(self):
         """returns CAMMs"""
        
-        if not self.__if_hexadecapoles: 
+        if not self.has_hexadecapoles: 
            return self.RArray, self.Mon, self.Dip, self.Quad, self.Oct 
         else:
            return self.RArray, self.Mon, self.Dip, self.Quad, self.Oct, self.Hex
@@ -755,7 +760,7 @@ where
 
         muu   = self.DipoleMoment
         mud   = muu/0.39343029
-        mu_av = sqrt(muu[0]**2 + muu[1]**2 + muu[2]**2)
+        mu_av = numpy.sqrt(muu[0]**2 + muu[1]**2 + muu[2]**2)
         mud_av= mu_av/0.39343029
 
         _mu_ = "%12s\n"                           % ('[A.U.]'.rjust(12))

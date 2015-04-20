@@ -32,7 +32,6 @@ class PARSER:
                stat=False,
                pad=10,
                mpot=1000,
-               transition=False,
                exchange=False,
                units='Angstroms'):
       ### --- defaults
@@ -51,9 +50,9 @@ class PARSER:
       self.bond_set     = list()
 
       # Transition density matrix options
-      self.transition = transition
-      self.states     = list()
-      self.dmat_set   = list()
+      self.transition_set = list()
+      self.state_set      = list()
+      self.dmat_set       = list()
 
       # K-integral correction for EEL(1)EDS
       self.exchange = exchange   # ! exchange integrals not working properly!!!
@@ -127,10 +126,20 @@ and multipole integrals (optional)."""
           M.append(mol1)
 
           # read electronic state
+          state = 1
           for line in a:
               if line.startswith('STATE='):
-                 self.states.append( int(line.split('=')[-1]) )
+                 state = int(line.split('=')[-1])
                  break
+          self.state_set.append( state )
+
+          # determine if transition
+          trans = False
+          for line in a:
+              if line.startswith('TRANS='):
+                 trans = bool(line.split('=')[-1])
+                 break
+          self.transition_set.append( trans )
 
           # read molecular density matrix
           for line in a:
@@ -144,16 +153,16 @@ and multipole integrals (optional)."""
                          dtype = line1.split('=')[-1]
                          break
 
-                 if self.transition:
+                 if self.transition_set[ia]:
                     dmat = read_transition_dmatrix(                                             
                                matrix_querry='Alpha transition density to state',
                                filetype='gaussian',file=dmat_file,
-                               state=self.states[ia])
+                               state=self.state_set[ia])
                                                                                                 
                     dmat+= read_transition_dmatrix(
                                matrix_querry='Beta transition density to state',
                                filetype='gaussian',file=dmat_file,
-                               state=self.state[ia])
+                               state=self.state_set[ia])
                     dmat=sqrt(2.0)*0.5*dmat # due to normalization of coeffs in gaussian to 1/2
                  else:
                     if dtype is not None:

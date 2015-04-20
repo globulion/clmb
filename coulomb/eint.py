@@ -57,7 +57,7 @@ in a.u."""
             Eint+=q1[i]*q2[j]/numpy.sqrt(numpy.sum((r1[i]-r2[j])**2))
     return Eint
 
-def Eelcamm(camm1,camm2):
+def Eelcamm(camm1,camm2,converter=1.0):#UNITS.HartreePerHbarToCmRec):
     """calculates E(EL)MTP from two CAMM distributions.
 camm1 and camm2 are the objects of the class MULT after 
 performing the 'camms()' method on them. Calculations are
@@ -67,7 +67,7 @@ a.u. as well. Remember to convert CAMMs to traceless form!
 
     #camm1.makeTracelessCAMMs()
     #camm2.makeTracelessCAMMs()
-    if camm1.has_hexadecapoles() and camm2.has_hexadecapoles():
+    if camm1.has_hexadecapoles and camm2.has_hexadecapoles:
        hexadecapoles = True
        Ra,qa,Da,Qa,Oa,Ha = camm1.ReturnCAMMs()
        Rb,qb,Db,Qb,Ob,Hb = camm2.ReturnCAMMs()
@@ -75,9 +75,6 @@ a.u. as well. Remember to convert CAMMs to traceless form!
        hexadecapoles = False
        Ra,qa,Da,Qa,Oa    = camm1.ReturnCAMMs()
        Rb,qb,Db,Qb,Ob    = camm2.ReturnCAMMs()
-
-    #
-    converter=UNITS.HartreePerHbarToCmRec
     #
     qq = 0
     qD = 0 ; Dq = 0
@@ -148,13 +145,13 @@ a.u. as well. Remember to convert CAMMs to traceless form!
                                Tensordot(Tensordot(Tensordot(R,Ob[j],(0,0)),R,(0,0)),R,(0,0)) ) /\
                                Rab**13                                                              # Oa - Ob  | R7
             
-             Eint = qq + qD + Dq + qQ + Qq + qO + Oq + DD + DQ + QD + DO + OD + QQ + QO + OQ + OO
+             Eint = qq + qD + Dq + qQ + Qq + qO + Oq + DD + DQ + QD + DO + OD + QQ + QO + OQ + OO + qH + Hq
              
              ### save the partitioning for current usage
              Eelcamm.qq = qq;Eelcamm.qD = qD;Eelcamm.qQ = qQ;Eelcamm.qO = qO;Eelcamm.QO = QO;Eelcamm.qH = qH
              Eelcamm.DD = DD;Eelcamm.DQ = DQ;Eelcamm.DO = DO;Eelcamm.QQ = QQ;Eelcamm.OO = OO;Eelcamm.Hq = Hq
     #
-    Eelcamm.A = (         qq )
+    Eelcamm.A = (            qq )
     Eelcamm.B = (Eelcamm.A + qD + Dq )
     Eelcamm.C = (Eelcamm.B + DD + qQ + Qq )
     Eelcamm.D = (Eelcamm.C + qO + Oq + DQ + QD)

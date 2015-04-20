@@ -822,19 +822,20 @@ where
   :         CHEMICAL PHYSICS LETTERS, VOL. 98, NO. 1, 1983        :
   '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 """
+        N_at = len(self.origin)
         log = ""
         log+= '\n'
         log+= " CUMULATIVE CHARGES\n"
         log+= " ------------------\n"
         log+= " %s %s\n"                         % ('ATOM'.rjust(10), 'q'.rjust(12))
-        for i in range(self.N_at):
+        for i in range(N_at):
             log+= " %10d %12.8f\n"               % ( i, self.Mon[i] )  
         log+= " \n"   
  
         log+= " CUMULATIVE DIPOLES\n"
         log+= " ------------------\n"
         log+= " %s %s %s %s\n"                   % ('ATOM'.rjust(10), 'x'.rjust(12), 'y'.rjust(12), 'z'.rjust(12))
-        for i in range(self.N_at):
+        for i in range(N_at):
             log+= " %10d %12.8f %12.8f %12.8f\n" % ( i, self.Dip[i][0], self.Dip[i][1], self.Dip[i][2] )
         log+= " \n" 
  
@@ -843,7 +844,7 @@ where
         log+= " %s %s %s %s %s %s %s %s %s %s\n" % ('ATOM'.rjust(10), 'xx'.rjust(12), 'xy'.rjust(12), 'xz'.rjust(12),
                                                                       'yx'.rjust(12), 'yy'.rjust(12), 'yz'.rjust(12),
                                                                       'zx'.rjust(12), 'zy'.rjust(12), 'zz'.rjust(12))
-        for i in range(self.N_at):
+        for i in range(N_at):
             log+= " %10d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n" % ( i, self.Quad[i][0][0], self.Quad[i][0][1], self.Quad[i][0][2], 
                                                                                                   self.Quad[i][1][0], self.Quad[i][1][1], self.Quad[i][1][2],
                                                                                                   self.Quad[i][2][0], self.Quad[i][2][1], self.Quad[i][2][2])
@@ -854,7 +855,7 @@ where
         log+= " %s %s %s %s %s %s %s %s %s %s\n" % ('ATOM'.rjust(10), 'xxx'.rjust(12), 'xxy'.rjust(12), 'xxz'.rjust(12),
                                                                       'xyx'.rjust(12), 'xyy'.rjust(12), 'xyz'.rjust(12),
                                                                       'xzx'.rjust(12), 'xzy'.rjust(12), 'xzz'.rjust(12))
-        for i in range(self.N_at):
+        for i in range(N_at):
             log+= " %10d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n" % ( i, self.Oct[i][0][0][0], self.Oct[i][0][0][1], self.Oct[i][0][0][2], 
                                                                                                   self.Oct[i][0][1][0], self.Oct[i][0][1][1], self.Oct[i][0][1][2],
                                                                                                   self.Oct[i][0][2][0], self.Oct[i][0][2][1], self.Oct[i][0][2][2])
@@ -863,7 +864,7 @@ where
         log+= " %s %s %s %s %s %s %s %s %s %s\n" % ('ATOM'.rjust(10), 'yxx'.rjust(12), 'yxy'.rjust(12), 'yxz'.rjust(12),
                                                                       'yyx'.rjust(12), 'yyy'.rjust(12), 'yyz'.rjust(12),
                                                                       'yzx'.rjust(12), 'yzy'.rjust(12), 'yzz'.rjust(12))
-        for i in range(self.N_at):
+        for i in range(N_at):
             log+= " %10d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n" % ( i, self.Oct[i][1][0][0], self.Oct[i][1][0][1], self.Oct[i][1][0][2], 
                                                                                                   self.Oct[i][1][1][0], self.Oct[i][1][1][1], self.Oct[i][1][1][2],
                                                                                                   self.Oct[i][1][2][0], self.Oct[i][1][2][1], self.Oct[i][1][2][2])
@@ -872,7 +873,7 @@ where
         log+= " %s %s %s %s %s %s %s %s %s %s\n" % ('ATOM'.rjust(10), 'zxx'.rjust(12), 'zxy'.rjust(12), 'zxz'.rjust(12),
                                                                       'zyx'.rjust(12), 'zyy'.rjust(12), 'zyz'.rjust(12),
                                                                       'zzx'.rjust(12), 'zzy'.rjust(12), 'zzz'.rjust(12))
-        for i in range(self.N_at):
+        for i in range(N_at):
             log+= " %10d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n" % ( i, self.Oct[i][2][0][0], self.Oct[i][2][0][1], self.Oct[i][2][0][2], 
                                                                                                   self.Oct[i][2][1][0], self.Oct[i][2][1][1], self.Oct[i][2][1][2],
                                                                                                   self.Oct[i][2][2][0], self.Oct[i][2][2][1], self.Oct[i][2][2][2])

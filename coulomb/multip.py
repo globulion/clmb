@@ -174,15 +174,14 @@ USAGE:
         for atom in self.molecule.atoms:
             if self.transition: qA  = 0
             else:               qA  = atom.atno
-            ZA = atom.atno
             R  = numpy.array(atom.pos())
             RR = numpy.outer(R,R)
             RRR= numpy.outer(R,numpy.outer(R,R)).reshape(3,3,3)
-            MA = ZA * R
-            QA = ZA * RR
-            OA = ZA * RRR
+            MA = qA * R
+            QA = qA * RR
+            OA = qA * RRR
             if self.has_hexadecapoles:
-               HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
+               HA = qA * numpy.outer(R,RRR).reshape(3,3,3,3)
           
             for I in xrange(self.K):
                 i = self.LIST1[I]

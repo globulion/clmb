@@ -652,30 +652,39 @@ where
         Wt = W.trace()
         Wtt= W.trace().trace()
         c = (5./8.)
+        p = (1./8.)
+        d = identity(3,numpy.float64)
         for i in [0,1,2]:
             for j in [0,1,2]:
                 for k in [0,1,2]:
                     for l in [0,1,2]:
-                        if i==j==k==l:                 # AAAA
-                           H -= (15./4.) * Wt[i,i]       - 3.0 * Wtt
-                        elif i==j and k==l and i!=k:   # AABB
-                           H -= c * (Wt[i,i] + Wt[k,k])  - Wtt
-                        elif i==k and j==l and i!=j:   # ABAB
-                           H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
-                        elif i==l and j==k and i!=j:   # ABBA
-                           H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
-                        elif i==j and j!=k and k!=l:   # AABC
-                           H -= c * Wt[k,l]
-                        elif i!=j and j!=k and k==l:   # ABCC
-                           H -= c * Wt[i,j]
-                        elif i!=j and j==k and k!=l:   # ABBC
-                           H -= c * Wt[i,l]
-                        elif i!=j and i==k and k!=l:   # ABAC
-                           H -= c * Wt[j,l]
-                        elif i!=j and j!=k and j==l:   # ABCB
-                           H -= c * Wt[i,k]
-                        elif i==l and i!=j and j!=k:   # ABCA
-                           H -= c * Wt[j,k]
+                        H[i,j,k,l] -= c * (d[i,j] * Wt[k,l] + d[i,k] * Wt[j,l] + d[i,l] * Wt[j,k] +
+                                           d[j,k] * Wt[i,l] + d[j,l] * Wt[i,k] + d[k,l] * Wt[i,j] ) \
+                                   -  p * Wtt * (d[i,j] * d[k,l] + d[i,k] * d[j,l] + d[i,l] * d[j,k] )
+#        for i in [0,1,2]:
+#            for j in [0,1,2]:
+#                for k in [0,1,2]:
+#                    for l in [0,1,2]:
+#                        if i==j==k==l:                 # AAAA
+#                           H -= (15./4.) * Wt[i,i]       - 3.0 * Wtt
+#                        elif i==j and k==l and i!=k:   # AABB
+#                           H -= c * (Wt[i,i] + Wt[k,k])  - Wtt
+#                        elif i==k and j==l and i!=j:   # ABAB
+#                           H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
+#                        elif i==l and j==k and i!=j:   # ABBA
+#                           H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
+#                        elif i==j and j!=k and k!=l:   # AABC
+#                           H -= c * Wt[k,l]
+#                        elif i!=j and j!=k and k==l:   # ABCC
+#                           H -= c * Wt[i,j]
+#                        elif i!=j and j==k and k!=l:   # ABBC
+#                           H -= c * Wt[i,l]
+#                        elif i!=j and i==k and k!=l:   # ABAC
+#                           H -= c * Wt[j,l]
+#                        elif i!=j and j!=k and j==l:   # ABCB
+#                           H -= c * Wt[i,k]
+#                        elif i==l and i!=j and j!=k:   # ABCA
+#                           H -= c * Wt[j,k]
         return  
 
     
@@ -713,30 +722,15 @@ where
                Wt = W.trace()
                Wtt= W.trace().trace()
                c = (5./8.)
+               p = (1./8.)                                                                                    
+               d = identity(3,numpy.float64)
                for i in [0,1,2]:
                    for j in [0,1,2]:
                        for k in [0,1,2]:
                            for l in [0,1,2]:
-                               if i==j==k==l:                 # AAAA
-                                  H -= (15./4.) * Wt[i,i]       - 3.0 * Wtt
-                               elif i==j and k==l and i!=k:   # AABB
-                                  H -= c * (Wt[i,i] + Wt[k,k])  - Wtt
-                               elif i==k and j==l and i!=j:   # ABAB
-                                  H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
-                               elif i==l and j==k and i!=j:   # ABBA
-                                  H -= c * (Wt[i,i] + Wt[j,j])  - Wtt
-                               elif i==j and j!=k and k!=l:   # AABC
-                                  H -= c * Wt[k,l]
-                               elif i!=j and j!=k and k==l:   # ABCC
-                                  H -= c * Wt[i,j]
-                               elif i!=j and j==k and k!=l:   # ABBC
-                                  H -= c * Wt[i,l]
-                               elif i!=j and i==k and k!=l:   # ABAC
-                                  H -= c * Wt[j,l]
-                               elif i!=j and j!=k and j==l:   # ABCB
-                                  H -= c * Wt[i,k]
-                               elif i==l and i!=j and j!=k:   # ABCA
-                                  H -= c * Wt[j,k]
+                               H[i,j,k,l] -= c * (d[i,j] * Wt[k,l] + d[i,k] * Wt[j,l] + d[i,l] * Wt[j,k] +
+                                                  d[j,k] * Wt[i,l] + d[j,l] * Wt[i,k] + d[k,l] * Wt[i,j] ) \
+                                          -  p * Wtt * (d[i,j] * d[k,l] + d[i,k] * d[j,l] + d[i,l] * d[j,k] )
 
         self.clock.actualize('transformation to traceless tensors')
              

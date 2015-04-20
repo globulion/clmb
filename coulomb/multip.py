@@ -96,7 +96,7 @@ USAGE:
         return
 
 
-    def if_hexadecapoles: return self.__if_hexadecapoles
+    def if_hexadecapoles(self): return self.__if_hexadecapoles
 
     def __lmtp(self):
         """calculate LMTP distribution"""

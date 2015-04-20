@@ -3,7 +3,7 @@
 # --------------------------------------------------- #
 
 from libbbg.units import *
-from numpy        import *
+import numpy
 
 __all__=['Eeldc','EelESP','Eelcamm']
 
@@ -37,7 +37,7 @@ def Eeldc(dc1,dc2):
             ri = o1 + vxa*ixa + vya*iya + vza*iza 
             rj = o2 + vxb*ixb + vyb*iyb + vzb*izb 
             # 
-            rij = sqrt(sum((ri-rj)**2)) 
+            rij = numpy.sqrt(numpy.sum((ri-rj)**2)) 
             Eint+= a*b/rij
             #
     return Eint        
@@ -54,7 +54,7 @@ in a.u."""
     Eint=0
     for i in range(N1):
         for j in range(N2):
-            Eint+=q1[i]*q2[j]/sqrt(sum((r1[i]-r2[j])**2))
+            Eint+=q1[i]*q2[j]/numpy.sqrt(numpy.sum((r1[i]-r2[j])**2))
     return Eint
 
 def Eelcamm(camm1,camm2):
@@ -67,8 +67,15 @@ a.u. as well. Remember to convert CAMMs to traceless form!
 
     #camm1.makeTracelessCAMMs()
     #camm2.makeTracelessCAMMs()
-    Ra,qa,Da,Qa,Oa = camm1.ReturnCAMMs() # hexadecapole integrals not implemented yet
-    Rb,qb,Db,Qb,Ob = camm2.ReturnCAMMs()
+    if camm1.has_hexadecapoles() and camm2.has_hexadecapoles():
+       hexadecapoles = True
+       Ra,qa,Da,Qa,Oa,Ha = camm1.ReturnCAMMs()
+       Rb,qb,Db,Qb,Ob,Hb = camm2.ReturnCAMMs()
+    else:
+       hexadecapoles = False
+       Ra,qa,Da,Qa,Oa    = camm1.ReturnCAMMs()
+       Rb,qb,Db,Qb,Ob    = camm2.ReturnCAMMs()
+
     #
     converter=UNITS.HartreePerHbarToCmRec
     #
@@ -84,68 +91,68 @@ a.u. as well. Remember to convert CAMMs to traceless form!
     OO = 0 ;
     qH = 0 ; Hq = 0
     #
-    for i in range(len(Ra)):
-         for j in range(len(Rb)):
+    Tensordot = numpy.tensordot
+    for i in xrange(len(Ra)):
+         for j in xrange(len(Rb)):
              R    = Rb[j]-Ra[i]
-             Rab=sqrt(sum(R**2,axis=0))
+             Rab=numpy.sqrt(numpy.sum(R**2,axis=0))
              qq  +=   qa[i]*qb[j]/Rab                                                               # qa - qb  | R1
-             #if not hash:
-             qD  +=  -qa[i]*tensordot(Db[j],R,(0,0))/Rab**3                                         # qa - Db  | R2
-             Dq  +=  +qb[j]*tensordot(Da[i],R,(0,0))/Rab**3                                         # qb - Da  | R2
-             DD  +=-3*tensordot(Da[i],R,(0,0))*tensordot(Db[j],R,(0,0))/Rab**5                      # Da - Db  | R3
-             DD  +=   tensordot(Da[i],Db[j],(0,0))/Rab**3                                           # Da - Db  | R3
-             qQ  +=   qa[i]*tensordot(R,tensordot(Qb[j],R,(0,0)),(0,0))/Rab**5                      # qa - Qb  | R3
-             Qq  +=   qb[j]*tensordot(R,tensordot(Qa[i],R,(0,0)),(0,0))/Rab**5                      # qb - Qa  | R3
-             DQ  +=-2*tensordot(Da[i],tensordot(Qb[j],R,(0,0)),(0,0))/Rab**5                        # Da - Qb  | R4
-             QD  += 2*tensordot(Db[j],tensordot(Qa[i],R,(0,0)),(0,0))/Rab**5                        # Db - Qa  | R4
-             DQ  += 5*tensordot(Da[i],R,(0,0))*tensordot(R,tensordot(Qb[j],R,(0,0)),(0,0))/Rab**7   # Da - Qb  | R4
-             QD  +=-5*tensordot(Db[j],R,(0,0))*tensordot(R,tensordot(Qa[i],R,(0,0)),(0,0))/Rab**7   # Db - Qa  | R4
-             qO  +=  -qa[i]*tensordot(R,tensordot(R,tensordot(Ob[j],R,(0,0)),(0,0)),(0,0))/Rab**7   # qa - Ob  | R4
-             Oq  +=   qb[j]*tensordot(R,tensordot(R,tensordot(Oa[i],R,(0,0)),(0,0)),(0,0))/Rab**7   # qb - Oa  | R4
-             QQ  += (35.)/(3.)* (tensordot(R,tensordot(Qa[i],R,(0,0)),(0,0)) *
-                                 tensordot(R,tensordot(Qb[j],R,(0,0)),(0,0))  ) / Rab**9            # Qa - Qb  | R5
-             OD  +=-7*(tensordot(Db[j],R,(0,0)) *
-                       tensordot(R,tensordot(R,tensordot(Oa[i],R,(0,0)),(0,0)),(0,0)) ) / Rab**9    # Db - Oa  | R5
-             DO  +=-7*(tensordot(Da[i],R,(0,0)) *
-                       tensordot(R,tensordot(R,tensordot(Ob[j],R,(0,0)),(0,0)),(0,0)) ) / Rab**9    # Da - Ob  | R5
-             QQ  +=-(20.)/(3.) * tensordot(tensordot(R,Qa[i],(0,0)),
-                                           tensordot(R,Qb[j],(0,0)),(0,0)) / Rab**7                 # Qa - Qb  | R5
-             QQ  +=(2.)/(3.)  * tensordot(Qa[i],Qb[j])  / Rab**5                                    # Qa - Qb  | R5
-             OD  +=3 * tensordot(R,tensordot(R,tensordot(Oa[i],Db[j],(0,0)),(0,0)),(0,0)) / Rab**7  # Db - Oa  | R5
-             DO  +=3 * tensordot(R,tensordot(R,tensordot(Ob[j],Da[i],(0,0)),(0,0)),(0,0)) / Rab**7  # Da - Ob  | R5
-             ### The remaining terms with hexadecapoles are not implemented yet
-             #Eint+= qb[j] * tensordot(R,tensordot(R,tensordot(R,tensordot(R,Ha[i],
-             #                (0,0)),(0,0)),(0,0)),(0,0))   / Rab**9                                 # Ha - qb  | R5
-             #Eint+= qa[i] * tensordot(R,tensordot(R,tensordot(R,tensordot(R,Hb[j],
-             #                (0,0)),(0,0)),(0,0)),(0,0))   / Rab**9                                 # Hb - qj  | R5
+             qD  +=  -qa[i]*Tensordot(Db[j],R,(0,0))/Rab**3                                         # qa - Db  | R2
+             Dq  +=  +qb[j]*Tensordot(Da[i],R,(0,0))/Rab**3                                         # qb - Da  | R2
+             DD  +=-3*Tensordot(Da[i],R,(0,0))*Tensordot(Db[j],R,(0,0))/Rab**5                      # Da - Db  | R3
+             DD  +=   Tensordot(Da[i],Db[j],(0,0))/Rab**3                                           # Da - Db  | R3
+             qQ  +=   qa[i]*Tensordot(R,Tensordot(Qb[j],R,(0,0)),(0,0))/Rab**5                      # qa - Qb  | R3
+             Qq  +=   qb[j]*Tensordot(R,Tensordot(Qa[i],R,(0,0)),(0,0))/Rab**5                      # qb - Qa  | R3
+             DQ  +=-2*Tensordot(Da[i],Tensordot(Qb[j],R,(0,0)),(0,0))/Rab**5                        # Da - Qb  | R4
+             QD  += 2*Tensordot(Db[j],Tensordot(Qa[i],R,(0,0)),(0,0))/Rab**5                        # Db - Qa  | R4
+             DQ  += 5*Tensordot(Da[i],R,(0,0))*Tensordot(R,Tensordot(Qb[j],R,(0,0)),(0,0))/Rab**7   # Da - Qb  | R4
+             QD  +=-5*Tensordot(Db[j],R,(0,0))*Tensordot(R,Tensordot(Qa[i],R,(0,0)),(0,0))/Rab**7   # Db - Qa  | R4
+             qO  +=  -qa[i]*Tensordot(R,Tensordot(R,Tensordot(Ob[j],R,(0,0)),(0,0)),(0,0))/Rab**7   # qa - Ob  | R4
+             Oq  +=   qb[j]*Tensordot(R,Tensordot(R,Tensordot(Oa[i],R,(0,0)),(0,0)),(0,0))/Rab**7   # qb - Oa  | R4
+             QQ  += (35.)/(3.)* (Tensordot(R,Tensordot(Qa[i],R,(0,0)),(0,0)) *
+                                 Tensordot(R,Tensordot(Qb[j],R,(0,0)),(0,0))  ) / Rab**9            # Qa - Qb  | R5
+             OD  +=-7*(Tensordot(Db[j],R,(0,0)) *
+                       Tensordot(R,Tensordot(R,Tensordot(Oa[i],R,(0,0)),(0,0)),(0,0)) ) / Rab**9    # Db - Oa  | R5
+             DO  +=-7*(Tensordot(Da[i],R,(0,0)) *
+                       Tensordot(R,Tensordot(R,Tensordot(Ob[j],R,(0,0)),(0,0)),(0,0)) ) / Rab**9    # Da - Ob  | R5
+             QQ  +=-(20.)/(3.) * Tensordot(Tensordot(R,Qa[i],(0,0)),
+                                           Tensordot(R,Qb[j],(0,0)),(0,0)) / Rab**7                 # Qa - Qb  | R5
+             QQ  +=(2.)/(3.)  * Tensordot(Qa[i],Qb[j])  / Rab**5                                    # Qa - Qb  | R5
+             OD  +=3 * Tensordot(R,Tensordot(R,Tensordot(Oa[i],Db[j],(0,0)),(0,0)),(0,0)) / Rab**7  # Db - Oa  | R5
+             DO  +=3 * Tensordot(R,Tensordot(R,Tensordot(Ob[j],Da[i],(0,0)),(0,0)),(0,0)) / Rab**7  # Da - Ob  | R5
+             if hexadecapoles:
+                Hq  += qb[j] * Tensordot(R,Tensordot(R,Tensordot(R,Tensordot(R,Ha[i],                               
+                                (0,0)),(0,0)),(0,0)),(0,0))   / Rab**9                              # Ha - qb  | R5
+                qH  += qa[i] * Tensordot(R,Tensordot(R,Tensordot(R,Tensordot(R,Hb[j],
+                                (0,0)),(0,0)),(0,0)),(0,0))   / Rab**9                              # Hb - qj  | R5
              ### these are implemented already !
-             #OQ  += 2* tensordot(tensordot(Oa[i],Qb[j],((0,1),(0,1))),R,(0,0)) / Rab**7             # Qb - Oa  | R6
-             #QO  +=-2* tensordot(tensordot(Ob[j],Qa[i],((0,1),(0,1))),R,(0,0)) / Rab**7             # Qa - Ob  | R6
-             #OQ  +=-14*tensordot(tensordot(R,tensordot(Oa[i],R,(1,0)),(0,0)) ,                      # Qb - Oa  | R6
-             #                    tensordot(R,Qb[j],(0,0)) ,(0,0)) / Rab**9                          
-             #QO  += 14*tensordot(tensordot(R,tensordot(Ob[j],R,(1,0)),(0,0)) ,                      # Qa - Ob  | R6
-             #                    tensordot(R,Qa[i],(0,0)) ,(0,0)) / Rab**9
-             #OQ  +=( 21*tensordot(tensordot(R,tensordot(Oa[i],R,(1,0)),(0,0)),R,(0,0))              # Qb - Oa  | R6
-             #         * tensordot(R,tensordot(Qb[j],R,(0,0)),(0,0))) / Rab**11
-             #QO  +=(-21*tensordot(tensordot(R,tensordot(Ob[j],R,(1,0)),(0,0)),R,(0,0))              # Qb - Oa  | R6
-             #         * tensordot(R,tensordot(Qa[i],R,(0,0)),(0,0))) / Rab**11   
-             #OO  +=(2.)/(5.)*tensordot(Oa[i],Ob[j],((0,1,2),(0,1,2))) / Rab**7                      # Ob - Oa  | R7
-             #OO  +=(-42./5.)*tensordot(tensordot(R,Oa[i],(0,0)),
-             #                          tensordot(R,Ob[j],(0,0)),
-             #                          ((0,1),(0,1))) / Rab**9                                      # Ob - Oa  | R7
-             #OO  +=(189.)/(5.)*tensordot(
-             #                            tensordot(tensordot(R,Oa[i],(0,0)),R,(0,0)),
-             #                            tensordot(tensordot(R,Ob[j],(0,0)),R,(0,0)),
-             #                            (0,0)) /Rab**11
-             #OO  +=-(231./5.)*(tensordot(tensordot(tensordot(R,Oa[i],(0,0)),R,(0,0)),R,(0,0)) *
-             #                  tensordot(tensordot(tensordot(R,Ob[j],(0,0)),R,(0,0)),R,(0,0)) ) /\
-             #                  Rab**13
-             
+             OQ  += 2* Tensordot(Tensordot(Oa[i],Qb[j],((0,1),(0,1))),R,(0,0)) / Rab**7             # Qb - Oa  | R6
+             QO  +=-2* Tensordot(Tensordot(Ob[j],Qa[i],((0,1),(0,1))),R,(0,0)) / Rab**7             # Qa - Ob  | R6
+             OQ  +=-14*Tensordot(Tensordot(R,Tensordot(Oa[i],R,(1,0)),(0,0)) ,                      # Qb - Oa  | R6
+                                 Tensordot(R,Qb[j],(0,0)) ,(0,0)) / Rab**9                          
+             QO  += 14*Tensordot(Tensordot(R,Tensordot(Ob[j],R,(1,0)),(0,0)) ,                      # Qa - Ob  | R6
+                                 Tensordot(R,Qa[i],(0,0)) ,(0,0)) / Rab**9
+             OQ  +=( 21*Tensordot(Tensordot(R,Tensordot(Oa[i],R,(1,0)),(0,0)),R,(0,0))              # Qb - Oa  | R6
+                      * Tensordot(R,Tensordot(Qb[j],R,(0,0)),(0,0))) / Rab**11
+             QO  +=(-21*Tensordot(Tensordot(R,Tensordot(Ob[j],R,(1,0)),(0,0)),R,(0,0))              # Qb - Oa  | R6
+                      * Tensordot(R,Tensordot(Qa[i],R,(0,0)),(0,0))) / Rab**11   
+             OO  +=(2.)/(5.)*Tensordot(Oa[i],Ob[j],((0,1,2),(0,1,2))) / Rab**7                      # Ob - Oa  | R7
+             OO  +=(-42./5.)*Tensordot(Tensordot(R,Oa[i],(0,0)),
+                                       Tensordot(R,Ob[j],(0,0)),
+                                       ((0,1),(0,1))) / Rab**9                                      # Ob - Oa  | R7
+             OO  +=(189.)/(5.)*Tensordot(
+                                         Tensordot(Tensordot(R,Oa[i],(0,0)),R,(0,0)),
+                                         Tensordot(Tensordot(R,Ob[j],(0,0)),R,(0,0)),
+                                         (0,0)) /Rab**11                                            # Oa - Ob  | R7
+             OO  +=-(231./5.)*(Tensordot(Tensordot(Tensordot(R,Oa[i],(0,0)),R,(0,0)),R,(0,0)) *
+                               Tensordot(Tensordot(Tensordot(R,Ob[j],(0,0)),R,(0,0)),R,(0,0)) ) /\
+                               Rab**13                                                              # Oa - Ob  | R7
+            
              Eint = qq + qD + Dq + qQ + Qq + qO + Oq + DD + DQ + QD + DO + OD + QQ + QO + OQ + OO
              
              ### save the partitioning for current usage
-             Eelcamm.qq = qq;Eelcamm.qD = qD;Eelcamm.qQ = qQ;Eelcamm.qO = qO;Eelcamm.QO = QO;
-             Eelcamm.DD = DD;Eelcamm.DQ = DQ;Eelcamm.DO = DO;Eelcamm.QQ = QQ;Eelcamm.OO = OO;
+             Eelcamm.qq = qq;Eelcamm.qD = qD;Eelcamm.qQ = qQ;Eelcamm.qO = qO;Eelcamm.QO = QO;Eelcamm.qH = qH
+             Eelcamm.DD = DD;Eelcamm.DQ = DQ;Eelcamm.DO = DO;Eelcamm.QQ = QQ;Eelcamm.OO = OO;Eelcamm.Hq = Hq
     #
     Eelcamm.A = (         qq )
     Eelcamm.B = (Eelcamm.A + qD + Dq )
@@ -178,6 +185,7 @@ a.u. as well. Remember to convert CAMMs to traceless form!
     log+= "%7s %19.2f      :\n"                  % ("Q-Q".rjust(6), QQ    *converter)
     log+= "%7s %19.2f      :\n"                  % ("Q-O".rjust(6),(QO+OQ)*converter)
     log+= "%7s %19.2f      :\n"                  % ("O-O".rjust(6), OO    *converter)
+    log+= "%7s %19.2f      :\n"                  % ("q-H".rjust(6),(qH+Hq)*converter)
     log+= " "+"-"*32+":"+"-"*26+"\n"
     log+= "\n"
     Eelcamm.log = log

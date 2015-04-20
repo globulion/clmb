@@ -2,15 +2,16 @@
 #         MULTIPOLE DISTRIBUTION MODULE       #
 # ------------------------------------------- #
 
-from libbbg.dma import DMA
-from run        import *
-from libbbg.utilities2 import array_outer_product,    \
-                              array_outer_product_1_2,\
-                              array_outer_product_2_1
+#from libbbg.dma import DMA
+#from run        import *
+#from libbbg.utilities2 import numpy.array_outer_product,    \
+#                              numpy.array_outer_product_1_2,\
+#                              numpy.array_outer_product_2_1
+import numpy, run, libbbg.utilities, libbbg.dma
 
 __all__=['MULTIP']
 
-class MULTIP(RUN):
+class MULTIP(run.RUN):
     """\                                                          
 ==================================================================
 Ccontains useful procedures for computing:                        
@@ -38,7 +39,7 @@ USAGE:
     def __init__(self, molecule, basis, method,
                        matrix=None,multInts=None,transition=False,
                        bonds=None,vec=None,hexadecapoles=False):
-        RUN.__init__(self, molecule, basis, method, matrix, multInts, hexadecapoles)
+        run.RUN.__init__(self, molecule, basis, method, matrix, multInts, hexadecapoles)
         # LIST1 - the list of atoms in the order of basis functions used,
         # e.g.: for h2o molecule with atoms: 8,1,1 and STO-3G basis
         # LIST1 = 0    0    0    0    0    1    2
@@ -81,9 +82,9 @@ USAGE:
     def get_centroids(self):
         """calculate LMO centroids"""
         nmos = len(self.vec)
-        centroids = zeros((nmos,3),dtype=float64)
+        centroids = numpy.zeros((nmos,3),dtype=numpy.float64)
         for LMO in xrange(nmos):
-            centroids[LMO] = tensordot( self.vec[LMO], tensordot(self.vec[LMO],
+            centroids[LMO] = numpy.tensordot( self.vec[LMO], numpy.tensordot(self.vec[LMO],
                                                                  self.D,(0,1)), (0,1))
         return centroids
     
@@ -93,7 +94,10 @@ USAGE:
         elif self.vec is not None: self.__lmtp()
         else:                      self.__camms()
         return
-        
+
+
+    def if_hexadecapoles: return self.__if_hexadecapoles
+
     def __lmtp(self):
         """calculate LMTP distribution"""
         self.operation = 'LMTP'
@@ -110,9 +114,9 @@ USAGE:
             if self.transition: qA  = 0
             else:               qA  = atom.atno
             ZA = atom.atno
-            R  = array(atom.pos())
-            RR = outer(R,R)
-            RRR= outer(R,outer(R,R)).reshape(3,3,3)
+            R  = numpy.array(atom.pos())
+            RR = numpy.outer(R,R)
+            RRR= numpy.outer(R,numpy.outer(R,R)).reshape(3,3,3)
             MA = ZA * R
             QA = ZA * RR
             OA = ZA * RRR
@@ -122,23 +126,23 @@ USAGE:
             Quad.append(QA)
             Oct .append(OA)
             if self.__if_hexadecapoles:
-               HA = ZA * outer(R,RRR).reshape(3,3,3,3)
+               HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
                Hex.append(HA)
             
         # electronic moments
         for LMO in xrange(nmos):
             A = self.vec[LMO]
-            chr = - 2* tensordot( A, tensordot(A, self.S,(0,0)), (0,0))
-            dip = - 2* tensordot( A, tensordot(A, self.D,(0,1)), (0,1))
-            qdr = - 2* tensordot( A, tensordot(A, self.Q,(0,2)), (0,2))
-            oct = - 2* tensordot( A, tensordot(A, self.O,(0,3)), (0,3))
+            chr = - 2* numpy.tensordot( A, numpy.tensordot(A, self.S,(0,0)), (0,0))
+            dip = - 2* numpy.tensordot( A, numpy.tensordot(A, self.D,(0,1)), (0,1))
+            qdr = - 2* numpy.tensordot( A, numpy.tensordot(A, self.Q,(0,2)), (0,2))
+            oct = - 2* numpy.tensordot( A, numpy.tensordot(A, self.O,(0,3)), (0,3))
             #
             Mon .append(chr)
             Dip .append(dip)
             Quad.append(qdr)
             Oct .append(oct)
             if self.__if_hexadecapoles:
-               hex = - 2* tensordot( A, tensordot(A, self.H,(0,4)), (0,4))
+               hex = - 2* numpy.tensordot( A, numpy.tensordot(A, self.H,(0,4)), (0,4))
                Hex.append(hex)
 
 
@@ -173,14 +177,14 @@ USAGE:
             if self.transition: qA  = 0
             else:               qA  = atom.atno
             ZA = atom.atno
-            R  = array(atom.pos())
-            RR = outer(R,R)
-            RRR= outer(R,outer(R,R)).reshape(3,3,3)
+            R  = numpy.array(atom.pos())
+            RR = numpy.outer(R,R)
+            RRR= numpy.outer(R,numpy.outer(R,R)).reshape(3,3,3)
             MA = ZA * R
             QA = ZA * RR
             OA = ZA * RRR
             if self.__if_hexadecapoles:
-               HA = ZA * outer(R,RRR).reshape(3,3,3,3)
+               HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
           
             for I in xrange(self.K):
                 i = self.LIST1[I]
@@ -210,11 +214,11 @@ USAGE:
         ### [2] bond moments
         # code for python-2.7
         qB  = {bond:0                            for bond in self.bonds}
-        MB  = {bond:zeros( 3     ,dtype=float64) for bond in self.bonds}
-        QB  = {bond:zeros((3,3  ),dtype=float64) for bond in self.bonds}
-        OB  = {bond:zeros((3,3,3),dtype=float64) for bond in self.bonds}
+        MB  = {bond:numpy.zeros( 3     ,dtype=numpy.float64) for bond in self.bonds}
+        QB  = {bond:numpy.zeros((3,3  ),dtype=numpy.float64) for bond in self.bonds}
+        OB  = {bond:numpy.zeros((3,3,3),dtype=numpy.float64) for bond in self.bonds}
         if self.__if_hexadecapoles:
-           HB  = {bond:zeros((3,3,3,3),dtype=float64) for bond in self.bonds}
+           HB  = {bond:numpy.zeros((3,3,3,3),dtype=numpy.float64) for bond in self.bonds}
         # code for python-2.6
         #qB = {}
         #MB = {}
@@ -223,11 +227,11 @@ USAGE:
         #HB = {}
         #for bond in self.bonds:
         #    qB.update({bond:0})
-        #    MB.update({bond:zeros( 3     ,dtype=float64)})
-        #    QB.update({bond:zeros((3,3  ),dtype=float64)})
-        #    OB.update({bond:zeros((3,3,3),dtype=float64)})
+        #    MB.update({bond:numpy.zeros( 3     ,dtype=numpy.float64)})
+        #    QB.update({bond:numpy.zeros((3,3  ),dtype=numpy.float64)})
+        #    OB.update({bond:numpy.zeros((3,3,3),dtype=numpy.float64)})
         #    if self.__if_hexadecapoles:
-        #       HB.update({bond:zeros((3,3,3,3),dtype=float64)})
+        #       HB.update({bond:numpy.zeros((3,3,3,3),dtype=numpy.float64)})
         #
         for bond in self.bonds:
             for I in xrange(self.K):
@@ -280,12 +284,12 @@ USAGE:
            for atom in self.molecule.atoms:                                                                                                            
                if self.transition: q  = 0
                else:               q  = atom.atno
-               M  = zeros( 3,dtype=float64)
-               Q  = zeros((3,3),dtype=float64)
-               O  = zeros((3,3,3),dtype=float64)
+               M  = numpy.zeros( 3,dtype=numpy.float64)
+               Q  = numpy.zeros((3,3),dtype=numpy.float64)
+               O  = numpy.zeros((3,3,3),dtype=numpy.float64)
                if self.__if_hexadecapoles:
-                  H = zeros((3,3,3,3),dtype=float64)
-               R = array(atom.pos()) 
+                  H = numpy.zeros((3,3,3,3),dtype=numpy.float64)
+               R = numpy.array(atom.pos()) 
                for I in xrange(self.K):
                    if self.LIST1[I]==n:
                       for J in xrange(self.K):
@@ -306,10 +310,10 @@ USAGE:
                                                               + R[i] * self.Q[j,k,I,J] + R[j] * self.Q[k,i,I,J] + R[k] * self.Q[i,j,I,J] 
                                                               - self.O[i,j,k,I,J] )
                           #R2 = outer(R,R)
-                          #R2D= array_outer_product_2_1(R2,self.D[:,I,J])
-                          #RQ = array_outer_product_1_2(R,self.Q[:,:,I,J])
+                          #R2D= numpy.array_outer_product_2_1(R2,self.D[:,I,J])
+                          #RQ = numpy.array_outer_product_1_2(R,self.Q[:,:,I,J])
                           #O += self.P[I,J] * (\
-                          #                   array_outer_product_1_2(R,outer(R,R)) * self.S[I,J] \
+                          #                   numpy.array_outer_product_1_2(R,outer(R,R)) * self.S[I,J] \
                           #                 - R2D - transpose(R2D,axes=(0,2,1)) - transpose(R2D,axes=(2,1,0))\
                           #                 + RQ  + transpose(RQ ,axes=(1,2,0)) + transpose(RQ ,axes=(2,0,1))\
                           #                 - self.O[:,:,:,I,J] 
@@ -349,14 +353,14 @@ USAGE:
                 if self.transition: qA  = 0
                 else:               qA  = atom.atno
                 ZA = atom.atno
-                R  = array(atom.pos())
-                RR = outer(R,R)
-                RRR= outer(R,outer(R,R)).reshape(3,3,3)
+                R  = numpy.array(atom.pos())
+                RR = numpy.outer(R,R)
+                RRR= numpy.outer(R,numpy.outer(R,R)).reshape(3,3,3)
                 MA = ZA * R
                 QA = ZA * RR
                 OA = ZA * RRR
                 if self.__if_hexadecapoles:
-                   HA = ZA * outer(R,RRR).reshape(3,3,3,3)
+                   HA = ZA * numpy.outer(R,RRR).reshape(3,3,3,3)
               
                 for I in xrange(self.K):
                     i = self.LIST1[I]
@@ -412,33 +416,33 @@ basing on the self.bonds list of bonds.
     def __make_pos(self):
         """calculate positions and origins"""
         natoms = len(self.molecule.atoms)
-        pos    = zeros((len(self.molecule.atoms),3),dtype=float64)
+        pos    = numpy.zeros((len(self.molecule.atoms),3),dtype=numpy.float64)
         ### CBAMM
         if self.bonds is not None:
            nfrag  = natoms + len(self.bonds)
-           origin = zeros((nfrag,3),dtype=float64)
+           origin = numpy.zeros((nfrag,3),dtype=numpy.float64)
            for i,atom in enumerate(self.molecule.atoms):
-               pos[i] = array(atom.pos())
-               origin[i] = array(atom.pos())
+               pos[i] = numpy.array(atom.pos())
+               origin[i] = numpy.array(atom.pos())
            for i,bond in enumerate(self.bonds):
-               A = array(self.molecule.atoms[bond[0]].pos())
-               B = array(self.molecule.atoms[bond[1]].pos())
+               A = numpy.array(self.molecule.atoms[bond[0]].pos())
+               B = numpy.array(self.molecule.atoms[bond[1]].pos())
                origin[natoms+i] = 0.5*(A+B)
         ### CAMM and MMM
         elif (self.bonds is None) and (self.vec is None):
            nfrag  = natoms
-           origin = zeros((nfrag,3),dtype=float64)
+           origin = numpy.zeros((nfrag,3),dtype=numpy.float64)
            for i,atom in enumerate(self.molecule.atoms):
-               pos[i] = array(atom.pos())
-               origin[i] = array(atom.pos())            
+               pos[i] = numpy.array(atom.pos())
+               origin[i] = numpy.array(atom.pos())            
         ### LMTP
         elif self.vec is not None:
            self.centroids = self.get_centroids()
            nfrag  = natoms + len(self.centroids)
-           origin = zeros((nfrag,3),dtype=float64)
+           origin = numpy.zeros((nfrag,3),dtype=numpy.float64)
            for i,atom in enumerate(self.molecule.atoms):
-               pos[i] = array(atom.pos())
-               origin[i] = array(atom.pos())
+               pos[i] = numpy.array(atom.pos())
+               origin[i] = numpy.array(atom.pos())
            for i,centroid in enumerate(self.centroids):
                origin[natoms+i] = self.centroids[i]
             
@@ -447,69 +451,69 @@ basing on the self.bonds list of bonds.
     def __make_dma(self,moments=None,change_origins=False):
         """creates the DMA object and saves it into self.dma"""
         #if moments is None:
-        #   mon=array(self.Mon),
-        #   dip=array(self.Dip),
-        #   quad=array(self.Quad),
-        #   oct=array(self.Oct)
+        #   mon=numpy.array(self.Mon),
+        #   dip=numpy.array(self.Dip),
+        #   quad=numpy.array(self.Quad),
+        #   oct=numpy.array(self.Oct)
         #else:
         #   print "FFF"
         #   mon,dip,quad,oct = moments
-        #   mon = array(mon)[newaxis]
-        #   dip = array(dip)[newaxis]
-        #   quad= array(quad)[newaxis]
-        #   oct = array(oct)[newaxis]
-        result = DMA(nfrag=len(self.origin), hexadecapoles=self.__if_hexadecapoles)
+        #   mon = numpy.array(mon)[newaxis]
+        #   dip = numpy.array(dip)[newaxis]
+        #   quad= numpy.array(quad)[newaxis]
+        #   oct = numpy.array(oct)[newaxis]
+        result = libbbg.dma.DMA(nfrag=len(self.origin), hexadecapoles=self.__if_hexadecapoles)
         result.set_name("%s --- %s %s/%s" % (self.molecule.name, self.operation,
                                              self.method, self.basis) )
         # in the case of C(A+B)MMs
         if change_origins:
-           result.set_structure(pos=self.pos,origin=zeros((len(self.origin),3),dtype=float64))
+           result.set_structure(pos=self.pos,origin=numpy.zeros((len(self.origin),3),dtype=numpy.float64))
         # in the case of CAMMs and MMMs
         else:
            result.set_structure(pos=self.pos,equal=True)
            
         # accumulate the distributed moments to the DMA object
-        ###print array(self.Quad).shape,array(quad).shape
-        result.DMA[0][:] = array(self.Mon)
+        ###print numpy.array(self.Quad).shape,numpy.array(quad).shape
+        result.DMA[0][:] = numpy.array(self.Mon)
         #
-        result.DMA[1][:] = array(self.Dip)
+        result.DMA[1][:] = numpy.array(self.Dip)
         #
-        result.DMA[2][:,0] = array(self.Quad)[:,0,0]
-        result.DMA[2][:,1] = array(self.Quad)[:,1,1]
-        result.DMA[2][:,2] = array(self.Quad)[:,2,2]
-        result.DMA[2][:,3] = array(self.Quad)[:,0,1]
-        result.DMA[2][:,4] = array(self.Quad)[:,0,2]
-        result.DMA[2][:,5] = array(self.Quad)[:,1,2]
+        result.DMA[2][:,0] = numpy.array(self.Quad)[:,0,0]
+        result.DMA[2][:,1] = numpy.array(self.Quad)[:,1,1]
+        result.DMA[2][:,2] = numpy.array(self.Quad)[:,2,2]
+        result.DMA[2][:,3] = numpy.array(self.Quad)[:,0,1]
+        result.DMA[2][:,4] = numpy.array(self.Quad)[:,0,2]
+        result.DMA[2][:,5] = numpy.array(self.Quad)[:,1,2]
         #
-        result.DMA[3][:,0] = array(self.Oct)[:,0,0,0]
-        result.DMA[3][:,1] = array(self.Oct)[:,1,1,1]
-        result.DMA[3][:,2] = array(self.Oct)[:,2,2,2]
-        result.DMA[3][:,3] = array(self.Oct)[:,0,0,1]
-        result.DMA[3][:,4] = array(self.Oct)[:,0,0,2]
-        result.DMA[3][:,5] = array(self.Oct)[:,0,1,1]
-        result.DMA[3][:,6] = array(self.Oct)[:,1,1,2]
-        result.DMA[3][:,7] = array(self.Oct)[:,0,2,2]
-        result.DMA[3][:,8] = array(self.Oct)[:,1,2,2]
-        result.DMA[3][:,9] = array(self.Oct)[:,0,1,2]
+        result.DMA[3][:,0] = numpy.array(self.Oct)[:,0,0,0]
+        result.DMA[3][:,1] = numpy.array(self.Oct)[:,1,1,1]
+        result.DMA[3][:,2] = numpy.array(self.Oct)[:,2,2,2]
+        result.DMA[3][:,3] = numpy.array(self.Oct)[:,0,0,1]
+        result.DMA[3][:,4] = numpy.array(self.Oct)[:,0,0,2]
+        result.DMA[3][:,5] = numpy.array(self.Oct)[:,0,1,1]
+        result.DMA[3][:,6] = numpy.array(self.Oct)[:,1,1,2]
+        result.DMA[3][:,7] = numpy.array(self.Oct)[:,0,2,2]
+        result.DMA[3][:,8] = numpy.array(self.Oct)[:,1,2,2]
+        result.DMA[3][:,9] = numpy.array(self.Oct)[:,0,1,2]
         #
         if self.__if_hexadecapoles:
-           result.DMA[4][:, 0] = array(self.Hex)[:,0,0,0,0]
-           result.DMA[4][:, 1] = array(self.Hex)[:,1,1,1,1]
-           result.DMA[4][:, 2] = array(self.Hex)[:,2,2,2,2]
-           result.DMA[4][:, 3] = array(self.Hex)[:,0,0,0,1]
-           result.DMA[4][:, 4] = array(self.Hex)[:,0,0,0,2]
-           result.DMA[4][:, 5] = array(self.Hex)[:,1,1,1,0]
-           result.DMA[4][:, 6] = array(self.Hex)[:,1,1,1,2]
-           result.DMA[4][:, 7] = array(self.Hex)[:,2,2,2,0]
-           result.DMA[4][:, 8] = array(self.Hex)[:,2,2,2,1]
-           result.DMA[4][:, 9] = array(self.Hex)[:,0,0,1,1]
-           result.DMA[4][:,10] = array(self.Hex)[:,0,0,2,2]
-           result.DMA[4][:,11] = array(self.Hex)[:,1,1,2,2]
-           result.DMA[4][:,12] = array(self.Hex)[:,0,0,1,2]
-           result.DMA[4][:,13] = array(self.Hex)[:,1,1,0,2]
-           result.DMA[4][:,14] = array(self.Hex)[:,2,2,0,1]
+           result.DMA[4][:, 0] = numpy.array(self.Hex)[:,0,0,0,0]
+           result.DMA[4][:, 1] = numpy.array(self.Hex)[:,1,1,1,1]
+           result.DMA[4][:, 2] = numpy.array(self.Hex)[:,2,2,2,2]
+           result.DMA[4][:, 3] = numpy.array(self.Hex)[:,0,0,0,1]
+           result.DMA[4][:, 4] = numpy.array(self.Hex)[:,0,0,0,2]
+           result.DMA[4][:, 5] = numpy.array(self.Hex)[:,1,1,1,0]
+           result.DMA[4][:, 6] = numpy.array(self.Hex)[:,1,1,1,2]
+           result.DMA[4][:, 7] = numpy.array(self.Hex)[:,2,2,2,0]
+           result.DMA[4][:, 8] = numpy.array(self.Hex)[:,2,2,2,1]
+           result.DMA[4][:, 9] = numpy.array(self.Hex)[:,0,0,1,1]
+           result.DMA[4][:,10] = numpy.array(self.Hex)[:,0,0,2,2]
+           result.DMA[4][:,11] = numpy.array(self.Hex)[:,1,1,2,2]
+           result.DMA[4][:,12] = numpy.array(self.Hex)[:,0,0,1,2]
+           result.DMA[4][:,13] = numpy.array(self.Hex)[:,1,1,0,2]
+           result.DMA[4][:,14] = numpy.array(self.Hex)[:,2,2,0,1]
 
-        # finally change the origins from zeros to origins (for C(A+B)MMs and LMTP)
+        # finally change the origins from numpy.zeros to origins (for C(A+B)MMs and LMTP)
         # tip: in the future CAMM should be rewritten in a vectorized manner as in CABMMs and LMTPs,
         #      which are computed at the origin of global coordinate system [0,0,0] and then recentered 
         #      to atomic or LMO centroid centers.
@@ -526,11 +530,11 @@ basing on the self.bonds list of bonds.
     def MU(self):
         """calculate molecular dipole moment""" 
         
-        Mu = array([0,0,0],dtype=float64)
+        Mu = numpy.array([0,0,0], dtype=numpy.float64)
         # nuclear contribution
         if not self.transition:
            for atom in self.molecule.atoms:
-               Mu+= atom.atno*array(atom.pos())
+               Mu+= atom.atno*numpy.array(atom.pos())
         # electronic contribution
         #Mu[:] -= self.P * self.D[:]
         for a in xrange(self.K):
@@ -543,12 +547,12 @@ basing on the self.bonds list of bonds.
     def QUAD(self):
         """calculate molecular quadrupole moment"""
         
-        Quad = zeros( (3,3) ,dtype=float64)
+        Quad = numpy.zeros( (3,3), dtype=numpy.float64)
         # nuclear contribution
         if not self.transition:
            for atom in self.molecule.atoms:
                Z = atom.atno
-               R = array(atom.pos())
+               R = numpy.array(atom.pos())
                for i in [0,1,2]:
                    for j in [0,1,2]:
                        Quad[i,j] += Z*R[i]*R[j]
@@ -563,12 +567,12 @@ basing on the self.bonds list of bonds.
     def OCT(self):
         """calculate molecular octupole moment"""
         
-        Oct = zeros( (3,3,3) ,dtype=float64)
+        Oct = numpy.zeros( (3,3,3), dtype=numpy.float64)
         # nuclear contribution
         if not self.transition:
            for atom in self.molecule.atoms:
                Z = atom.atno
-               R = array(atom.pos())
+               R = numpy.array(atom.pos())
                for i in [0,1,2]:
                    for j in [0,1,2]:
                        for k in [0,1,2]:
@@ -586,12 +590,12 @@ basing on the self.bonds list of bonds.
     def HEX(self):
         """calculate molecular hexadecapole moment"""
         
-        Hex = zeros( (3,3,3,3) ,dtype=float64)
+        Hex = numpy.zeros( (3,3,3,3), dtype=numpy.float64)
         # nuclear contribution
         if not self.transition:
            for atom in self.molecule.atoms:
                Z = atom.atno
-               R = array(atom.pos())
+               R = numpy.array(atom.pos())
                for i in [0,1,2]:
                    for j in [0,1,2]:
                        for k in [0,1,2]:
@@ -610,8 +614,7 @@ basing on the self.bonds list of bonds.
 
 
     def makeTracelessOCT(self,O):
-        W= zeros((3,3,3),dtype=float)
-        W[:]= O
+        W = O.copy()
         O *= (5./2.)
         for i in [0,1,2]:
             for j in [0,1,2]:
@@ -626,6 +629,7 @@ basing on the self.bonds list of bonds.
                     elif i!=j and j==k:
                          O[i,j,k]-= (1./2.) * Wt[i]
         return  
+
 
     def makeTracelessHEX(self,H):
         """
@@ -646,14 +650,13 @@ where
 
 
 """
-#        raise NotImplementedError, 'traceless hexadecapoles are not implemented yet!'
         W = H.copy()
         H *= (35./8.)
         Wt = W.trace()
         Wtt= W.trace().trace()
         c = (5./8.)
         p = (1./8.)
-        d = identity(3,numpy.float64)
+        d = numpy.identity(3,numpy.numpy.float64)
         for i in [0,1,2]:
             for j in [0,1,2]:
                 for k in [0,1,2]:
@@ -693,18 +696,17 @@ where
         
         # Quadrupole moment
         for Q in self.Quad:
-            t=trace(Q)
+            t=Q.trace()
             Q *= (3./2.)
             for i in [0,1,2]: Q[i,i]-=(1./2.)*t
         # Octapole moment
         for O in self.Oct:
-            W= zeros((3,3,3),dtype=float)
-            W[:]= O
+            W = O.copy()
+            Wt= W.trace()
             O *= (5./2.)
             for i in [0,1,2]:
                 for j in [0,1,2]:
                     for k in [0,1,2]:
-                        Wt = trace(W)
                         if   i==j and i==k:
                              O[i,j,k]-= (1./2.) * (Wt[i] + Wt[j] + Wt[k])
                         elif i==j and i!=k:
@@ -723,7 +725,7 @@ where
                Wtt= W.trace().trace()
                c = (5./8.)
                p = (1./8.)                                                                                    
-               d = identity(3,numpy.float64)
+               d = numpy.identity(3,numpy.numpy.float64)
                for i in [0,1,2]:
                    for j in [0,1,2]:
                        for k in [0,1,2]:

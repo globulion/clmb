@@ -235,13 +235,13 @@ USAGE:
                 for J in xrange(self.K):
                     i = self.LIST1[I]
                     j = self.LIST1[J]
-                    if (i,j) == bond:
-                        qB[bond] -= 2*self.P[I,J] * self.S[I,J]
-                        MB[bond] -= 2*self.P[I,J] * self.D[:,I,J]
-                        QB[bond] -= 2*self.P[I,J] * self.Q[:,:,I,J]
-                        OB[bond] -= 2*self.P[I,J] * self.O[:,:,:,I,J]
+                    if ((i,j) == bond or (j,i)==bond):
+                        qB[bond] -= self.P[I,J] * self.S[I,J]
+                        MB[bond] -= self.P[I,J] * self.D[:,I,J]
+                        QB[bond] -= self.P[I,J] * self.Q[:,:,I,J]
+                        OB[bond] -= self.P[I,J] * self.O[:,:,:,I,J]
                         if self.has_hexadecapoles:
-                           HB[bond] -= 2*self.P[I,J] * self.H[:,:,:,:,I,J]
+                           HB[bond] -= self.P[I,J] * self.H[:,:,:,:,I,J]
         # append the bond moments
         for bond in self.bonds:
             Mon .append( qB[bond] )

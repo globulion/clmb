@@ -256,12 +256,12 @@ class DO(PARSER):
                          self.basis,self.method,
                          matrixa=self.dmat_set[0],
                          matrixb=self.dmat_set[1],
-                         transition=self.transition_set[i],
+                         transition=self.transition_set[0],
                          exchange=self.exchange)
            except IndexError: 
               result = EELEDS(self.M[0],self.M[1],
                          self.basis,self.method,
-                         transition=self.transition_set[i],
+                         transition=self.transition_set[0],
                          exchange=self.exchange)
            print result
 

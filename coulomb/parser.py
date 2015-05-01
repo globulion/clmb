@@ -82,7 +82,7 @@ tasks to be performed"""
 multiplicity, charge, coordinates, density matrix (optional) 
 and multipole integrals (optional)."""
          
-      nat = {'H': 1, 'He': 2, 'Li': 3, 'C': 6, 'N': 7, 'O': 8, 'F': 9, 'Na':11, 'S':16, 'Cl':17 }
+      nat = {'H': 1, 'He': 2, 'Li': 3, 'C': 6, 'N': 7, 'O': 8, 'F': 9, 'Na':11, 'S':16, 'Cl':17, 'Mg':12}
       # search atomic coorinates
       cp = re.compile('([a-zA-Z]*) *(-?\d*\.\d*) *(-?\d*\.\d*) *(-?\d*\.\d*).*')
       # search multiplicity and charge

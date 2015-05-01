@@ -33,7 +33,9 @@ verify the quality of charge fitting. All values in AU."""
                    6:3.0000, 
                    7:2.4000,
                    8:2.6000,
-                   9:2.3000,}
+                   9:2.3000,
+                  12:2.9000,
+                  35:2.9000,}
        # condition number treshold
        self.condition_number_treshold = cnt
        self.stat=False

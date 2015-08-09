@@ -9,6 +9,7 @@ from multip import *
 from esp    import *
 from eeleds import *
 from eint   import * 
+from numpy  import array
 
 __all__=['DO']
 
@@ -32,6 +33,7 @@ class DO(PARSER):
         self.svd               = False
         self.stat              = False
         self.Print             = False
+        self.fit_atoms         = None
         # --- search the tasks
         for task in self.tasks:
             # search the units
@@ -76,6 +78,9 @@ class DO(PARSER):
             # search for saving information
             if   'save' in task.lower():
                   self.outname = self.search(task)[0]
+            # search for atoms for which ESP has to be performed
+            if   'fit_atoms' in task.lower():
+                  self.fit_atoms = self.search(task)
 
         # ---- DO! ----
         # multipole population calculations
@@ -119,6 +124,7 @@ class DO(PARSER):
 
             # use external multints and density matrix
             try:
+               print " READING EXTERNAL DENSITY MATRIX\n"  # EXTERNAL MULTINTS INTERFACE NOT ADDED YET!
                result = MULTIP(mol,self.basis,self.method,
                                matrix=self.dmat_set[i],
                                transition=self.transition_set[i],
@@ -126,6 +132,7 @@ class DO(PARSER):
                                hexadecapoles=self.has_hexadecapoles)
             # calculate multints and density matrix using PyQuante
             except IndexError: 
+               print " CALCULATION OF DENSITY MATRIX BY DIRECT SCF (OR INDEX ERROR: CHECK IF SCF WAS NOT CHOSEN)"
                result = MULTIP(mol,self.basis,self.method,
                                transition=self.transition_set[i],
                                bonds=self.bond_set[i],
@@ -153,28 +160,43 @@ class DO(PARSER):
             print "     ","-"*55            
             # use external multints and density matrix
             try:
+                      print " READING EXTERNAL DENSITY MATRIX\n"  # EXTERNAL MULTINTS INTERFACE NOT ADDED YET!
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
                                    matrix=self.dmat_set[i],
-                                   transition=self.transition_set[i])
-                      dma = DMA(nfrag=len(mol.atoms))
+                                   transition=self.transition_set[i],
+                                   fit_atoms=self.fit_atoms)
+                      if self.fit_atoms is not None:
+                         dma = DMA(nfrag=len(self.fit_atoms))
+                         dma.set_structure(pos=mol.get_pos()[array(self.fit_atoms,int)-1],equal=True)
+                      else:
+                         dma = DMA(nfrag=len(mol))
+                         dma.set_structure(pos=mol.get_pos()[:]                    ,equal=True)
                       dma.set_moments(charges=result.charges)
-                      dma.set_structure(pos=mol.get_pos(),equal=True)
                       if self.outname is not None:
                          dma.write(self.outname)
                       self.__dma = dma
+                      print result
             except IndexError: 
+                      
+                      print " CALCULATION OF DENSITY MATRIX BY DIRECT SCF (OR INDEX ERROR: CHECK IF SCF WAS NOT CHOSEN)"
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
-                                   transition=self.transition_set[i])
-                      dma = DMA(nfrag=len(mol.atoms))
+                                   transition=self.transition_set[i],
+                                   fit_atoms=self.fit_atoms)
+                      if self.fit_atoms is not None:
+                         dma = DMA(nfrag=len(self.fit_atoms))
+                         dma.set_structure(pos=mol.get_pos()[array(self.fit_atoms,int)-1],equal=True)
+                      else:
+                         dma = DMA(nfrag=len(mol))
+                         dma.set_structure(pos=mol.get_pos()[:]                    ,equal=True)
                       dma.set_moments(charges=result.charges)
-                      dma.set_structure(pos=mol.get_pos(),equal=True)
                       if self.outname is not None:
                          dma.write(self.outname)
                       self.__dma = dma
+                      print result
                                    
     def eint(self,method):
         """performs electrostatic interaction energy 
@@ -223,12 +245,14 @@ class DO(PARSER):
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
                                    matrix=self.dmat_set[i],
-                                   transition=self.transition_set[i]) 
+                                   transition=self.transition_set[i],
+                                   fit_atoms=self.fit_atoms) 
                    except IndexError: 
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
-                                   transition=self.transition_set[i]) 
+                                   transition=self.transition_set[i],
+                                   fit_atoms=self.fit_atoms) 
               results.append(result)
               #result.clock.__print__()
 

@@ -19,12 +19,23 @@ verify the quality of charge fitting. All values in AU."""
 
    def __init__(self, molecule, basis, method, mpot=1000, pot='CAMM', pad=10, 
                       SVD=False, matrix=None, multInts=None, cnt=0.0100, 
-                      stat=False, Print=True, transition=False):
+                      stat=False, Print=True, transition=False, fit_atoms=None):
        RUN.__init__(self, molecule, basis, method, matrix, multInts, hexadecapoles=False)
        # transition 
        self.transition = transition
        # number of points for potential to be computed (total)
-       self.mpot = mpot * len(molecule.atoms)
+       if fit_atoms is not None:
+          self.fit_atoms = array(fit_atoms,int) - 1
+          self.mpot = mpot * len(self.fit_atoms)
+          self.fit_atoms_idx = self.fit_atoms
+          self.N_fit_atoms   = len(self.fit_atoms_idx)
+	  self.RArray_fit = self.RArray[self.fit_atoms_idx]
+       else: 
+          self.mpot = mpot * len(molecule.atoms)
+          self.fit_atoms_idx = arange(self.N_at)
+          self.N_fit_atoms   = self.N_at
+          self.RArray_fit = self.RArray
+       print " NUMBER OF FITTED CHARGES: %d\n NUMBER OF MPOINTS       : %d\n" % ( self.N_fit_atoms, self.mpot )
        self.pot = pot
        # box padding
        self.pad = pad
@@ -68,6 +79,7 @@ verify the quality of charge fitting. All values in AU."""
        
        # derive potential from CAMMs
        if   self.pot.lower()=='camm':
+            print " CALCULATION OF ELECTROSTATIC POTENTIAL FROM CAMM"
             camm = MULTIP(self.molecule,self.basis,self.method,
                           matrix=self.matrix,multInts=self.multInts,
                           transition=self.transition)
@@ -79,6 +91,7 @@ verify the quality of charge fitting. All values in AU."""
                 self.VArray[i,3] = Vr_camms(camm,self.VArray[i,:3]) 
             self.clock.actualize('potential from CAMMs')
        elif self.pot.lower()=='wfn':
+            print " CALCULATION OF EXACT ELECTROSTATIC POTENTIAL FROM WFN"
             for i in range(self.mpot):
                 self.VArray[i,3] = Vr_wfn_1(self.molecule,self.bfs,self.P,self.VArray[i,:3])
             self.clock.actualize('potential from wave function')
@@ -91,11 +104,11 @@ verify the quality of charge fitting. All values in AU."""
        VFArray[:,:3] = self.VArray[:,:3]
        for i in range(self.mpot):
            for j in range(len(self.charges)):
-               VFArray[i,3] += self.charges[j]/sqrt( sum( (VFArray[i,:3]-self.RArray[j])**2 ) )
+               VFArray[i,3] += self.charges[j]/sqrt( sum( (VFArray[i,:3]-self.RArray_fit[j])**2 ) )
        self.VFArray = VFArray
        self.clock.actualize('potential from fitted charges')
 
-   def __print__(self):
+   def __repr__(self):
        """an output printout routine. Prints: 
    --- real order of distance matrix (if specified)
    --- fitted charges
@@ -105,20 +118,20 @@ verify the quality of charge fitting. All values in AU."""
        if self.svd: 
           log+= "\n     THE ORDER OF DISTANCE MATRIX IS --- %d ---"%self.order
           log+= "\n     for condition number treshold: %.6f\n"%self.condition_number_treshold
-          if self.order<self.N_at: 
+          if self.order<self.N_fit_atoms: 
              log+= "\n     LINEAR DEPENDENCE IN DISTANCE MATRIX DETECTED! "
-             log+= "\n     --- %d poitns were discarded from the analysis"%(self.N_at-self.order)
+             log+= "\n     --- %d poitns were discarded from the analysis"%(self.N_fit_atoms-self.order)
           else:
              log+= "\n     NO LINEAR DEPENDENCE IN DISTANCE MATRIX."
 
        log+= '\n\n\n\n'
        log+= " FITTED CHARGES\n"
        log+= " --------------\n"
-       log+= " %s %s\n"                         % ('ATOM'.rjust(12), 'q'.rjust(12))
-       for i in range(self.N_at):
-           log+= " %10d %12.8f\n"               % ( i, self.charges[i] )  
+       log+= " %12s %12s\n"                         % ('ATOM'.rjust(12), 'q'.ljust(12))
+       for i in range(self.N_fit_atoms):
+           log+= " %10d %12.8f\n"               % ( self.fit_atoms_idx[i]+1, self.charges[i] )  
        log+= " \n"   
-       print log
+       return str(log)
 
    # ---- UTILITIES
    def RandomPoints(self):
@@ -152,11 +165,11 @@ verify the quality of charge fitting. All values in AU."""
 
    def rijmatrix(self):
        """calculates distance matrix, A_ij = 1./r_ij"""
-       
-       A = zeros((self.mpot,self.N_at),dtype=float64)
+
+       A = zeros((self.mpot,self.N_fit_atoms),dtype=float64)
        for i in range(self.mpot):
-           for j in range(self.N_at):
-               A[i,j] = 1./sqrt( sum( (self.VArray[i,:3]-self.RArray[j])**2 ) )
+           for j in range(self.N_fit_atoms):
+               A[i,j] = 1./sqrt( sum( (self.VArray[i,:3]-self.RArray_fit[j])**2 ) )
        self.clock.actualize('1./rij matrix calculations')
        # check the order of the matrix
        U,S,Vt = svd(A)
@@ -164,7 +177,7 @@ verify the quality of charge fitting. All values in AU."""
        del Vt
        self.clock.actualize('SVD decomposition of distance matrix')
        Smax = max(S)
-       order = self.N_at
+       order = self.N_fit_atoms
        for i in range(len(S)):
            if S[i]/Smax < self.condition_number_treshold:
               order -=1
@@ -176,25 +189,25 @@ verify the quality of charge fitting. All values in AU."""
    def lsmatrix(self):
        """computes least-square matrix, A_jk=\sum_i (r_ij*r_ik)^-1"""
        
-       A = zeros((self.N_at+1,self.N_at+1),dtype=float64)
-       for j in range(self.N_at):
+       A = zeros((self.N_fit_atoms+1,self.N_fit_atoms+1),dtype=float64)
+       for j in range(self.N_fit_atoms):
            for k in range(j+1):
                for i in range(self.mpot):
-                   rij = sqrt( sum( (self.VArray[i,:3]-self.RArray[j])**2 ) )
-                   rik = sqrt( sum( (self.VArray[i,:3]-self.RArray[k])**2 ) )
+                   rij = sqrt( sum( (self.VArray[i,:3]-self.RArray_fit[j])**2 ) )
+                   rik = sqrt( sum( (self.VArray[i,:3]-self.RArray_fit[k])**2 ) )
                    A[j,k] += 1./(rij*rik)
                A[k,j] = A[j,k]
-       A[-1,-1] = 1
+       A[-1,-1] = 1.0
        self.clock.actualize('computation of least-square matrix')
        return A
 
    def bvec(self):
        """computes B vector, B_k = \sum_i V_i/r_ik"""
        
-       B = zeros(self.N_at+1,dtype=float64)
-       for k in range(self.N_at):
+       B = zeros(self.N_fit_atoms+1,dtype=float64)
+       for k in range(self.N_fit_atoms):
            for i in range(self.mpot):
-               B[k] += self.VArray[i,3]/sqrt( sum( (self.VArray[i,:3]-self.RArray[k])**2 ) ) 
+               B[k] += self.VArray[i,3]/sqrt( sum( (self.VArray[i,:3]-self.RArray_fit[k])**2 ) ) 
        self.clock.actualize('B-matrix computation')
        return B
 

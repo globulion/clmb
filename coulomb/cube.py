@@ -9,7 +9,7 @@ from numpy import *
 from libbbg.utilities import Read_xyz_file, Vr_dma, Energy_density, SVDSuperimposer
 from libbbg.units import *
 from PyQuante.GridPoint import GridPoint
-import sys
+import sys, copy
 
 class CUBFLE:
       """
@@ -64,6 +64,24 @@ class CUBFLE:
           return self.spacings
       def get_origin(self):
           return self.origin
+
+      def copy(self): return copy.deepcopy(self)
+ 
+      # arithmetic operations
+      def __add__(self, other):
+          new = self.copy()
+          new.data += other.data
+          return new
+
+      def __sub__(self, other):
+          new = self.copy()
+          new.data -= other.data
+          return new
+
+      def __mul__(self, other):
+          new = self.copy()
+          new.data *= other
+          return new
 
       def integrate(self, rule='simple'):
           """integrate the cube file content"""

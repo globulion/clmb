@@ -1,0 +1,3 @@
+#!/bin/bash
+export PYTHONPATH=/home/globula/lib/python2.7/site-packages/:/home/globula/test_lib/lib/python2.7/site-packages/
+python ./setup.py install --prefix /home/globula/test_lib/

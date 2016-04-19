@@ -83,14 +83,27 @@ class CUBFLE:
           new.data *= other
           return new
 
-      def integrate(self, rule='simple'):
+      def integrate(self, rule='simple', rank=0, origin=array([0.0,0.0,0.0])):
           """integrate the cube file content"""
           s = linalg.eig(self.spacings)[0]
-          Int = s[0]*s[1]*s[2]
+          s_x = s[0]; s_y = s[1] ; s_z = s[2]
           Io = 0.0
-          #
-          if rule=='simple': Io = self.data.sum()
-          else: raise Exception('No rule %s implemented' % rule)
+          # \int rho(r) * 1 * dr
+          if rank == 0:
+             Int = s[0]*s[1]*s[2]                                   
+             #
+             if rule=='simple': Io = self.data.sum()
+             else: raise Exception('No rule %s implemented' % rule)
+          # \int rho(r) * 1 * dr
+          elif rank == 1:
+               #for i in range(self.n_x):
+               #    r_x = i*s_x
+               #    for j in range(self.n_y):
+               #        r_y = j*s_y
+               #        for k in range(self.n_z):
+               #            r_z = k*s_z
+               #            d = 
+          else: raise Exception('No rank %i implemented' % rank)  
           return Io * Int 
 
       def sup(self, xyz, suplist=None, rotran=None):

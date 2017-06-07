@@ -95,7 +95,7 @@ class CUBFLE:
              if rule=='simple': Io = self.data.sum()
              else: raise Exception('No rule %s implemented' % rule)
           # \int rho(r) * 1 * dr
-          elif rank == 1:
+          elif rank == 1: pass
                #for i in range(self.n_x):
                #    r_x = i*s_x
                #    for j in range(self.n_y):

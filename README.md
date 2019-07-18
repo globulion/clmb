@@ -3,6 +3,8 @@ clmb
 
 Coulomb.py Project
 
+The project was lauched in 2010 in Wrocław University of Science and Technology
+in Wrocław, Poland.
 The package is designed for quantum chemistry calculations
 of electrostatic interaction energy between two molecular species.
 Currently, the implemented methods are:
@@ -26,7 +28,7 @@ Installation prerequisites:
 - Python 2.6 or newer
 - NumPy module for Python
 - pp module for Python
-- PyQuante modified version (soon the link will be uploaded)
+- PyQuante modified version
 - LibInt 1.1.4
 
 To install the Coulomb package type the following commands:

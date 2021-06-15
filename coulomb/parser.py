@@ -168,7 +168,7 @@ and multipole integrals (optional)."""
                     if dtype is not None:
                        dmat = ParseDmatFromFchk(dmat_file,type=dtype)
                     else:
-                       print " No density type specified! Add DTYPE=(SCF, MP2 or CC) keyword.\n Quitting...\n"
+                       print(" No density type specified! Add DTYPE=(SCF, MP2 or CC) keyword.\n Quitting...\n")
                        exit()
                  self.dmat_set.append(dmat)
                  break
@@ -185,7 +185,7 @@ and multipole integrals (optional)."""
           # read molecular multipole integrals
           for line in a:
               if line.startswith('MULTINTS='):
-                 raise NotImplementedError, "Reading multipole integrals in not implemented yet! All integrals are as for now evaluated by PyQuante-Mod."
+                 raise NotImplementedError("Reading multipole integrals in not implemented yet! All integrals are as for now evaluated by PyQuante-Mod.")
                  self.multints_set.append([])
                  break
                 

@@ -45,12 +45,12 @@ __all__=['read_transition_dmatrix','TIMER','Usage','Version']
 
 def Error():
     """Error box""" 
-    print
-    print " ******************************************* "
-    print " ***  ERROR:  Invalid option! :D         *** "
-    print " ***     see the help box:               *** "
-    print " ***          this_file.py -v            *** " 
-    print " ******************************************* "
+    print()
+    print(" ******************************************* ")
+    print(" ***  ERROR:  Invalid option!            *** ")
+    print(" ***     see the help box:               *** ")
+    print(" ***          this_file.py -v            *** ")
+    print(" ******************************************* ")
     print;exit()
  
  
@@ -62,40 +62,40 @@ def Usage():
     """Print usage information and exit."""
     
     os.system('clear')
-    print __doc__
-    print " Machine epsilon is: ",finfo(float64).eps,"for float64 type\n"
-    print;exit()
+    print(__doc__)
+    print(" Machine epsilon is: ",finfo(float64).eps,"for float64 type\n")
+    print();exit()
 
 def Version():
     """Print version and other information"""
     
-    print """
-    COULOMB.py © 2012 version %s
-    %s
+    print("""
+ COULOMB.py © 2012 version %s
+ %s
 
-    This simple script is designed to perform quantum chemi-   
-    cal calculations of coulomb or pseudo-coulomb interaction  
-    energy between molecules or molecular aggregates. The      
-    methods implemented in this script are based on:           
-    ---------------------------------------------------------  
-     - DC          : Density Cube                              
-     - ESP         : Charges from Electrostatic Potential      
-     - CAMM        : Cumulative Atomic Multipole Moments       
-     - EELEDS      : 1-order electrostatic energy term from 
-                   : Hybrid Variational-Perturbational 
-                   : Interaction Energy Decomposotion Scheme              
-    ---------------------------------------------------------  
-    It also can compute molecular multipole and CAMM distri-   
-    butions as well as fit the charges according to ESP pro-
-    cedure.
+ This simple script is designed to perform quantum chemi-   
+ cal calculations of coulomb or pseudo-coulomb interaction  
+ energy between molecules or molecular aggregates. The      
+ methods implemented in this script are based on:           
+ ---------------------------------------------------------  
+  - DC          : Density Cube                              
+  - ESP         : Charges from Electrostatic Potential      
+  - CAMM        : Cumulative Atomic Multipole Moments       
+  - EELEDS      : 1-order electrostatic energy term from 
+                : Hybrid Variational-Perturbational 
+                : Interaction Energy Decomposotion Scheme              
+ ---------------------------------------------------------  
+ It also can compute molecular multipole and CAMM distri-   
+ butions as well as fit the charges according to ESP pro-
+ cedure.
 
-    The format of input file is described in mini-manual ava-  
-    ilable in the package.                                     
-   
-    Usage:
-    coulomb.py [file] - load input file (may contain molecule, units, methods,
-                        density matrix and multipole ints)"
-"""%(__version__,__author__)
+ The format of input file is described in mini-manual ava-  
+ ilable in the package.                                     
+ 
+ Usage:
+ coulomb.py [file] - load input file (may contain molecule, units, methods,
+                     density matrix and multipole ints)"
+"""%(__version__,__author__))
 
 
 
@@ -162,12 +162,12 @@ class TIMER:
         for i in range(len(self.log) - 6):
             self.log[i+5] += "(%4.1f%%)" % (self.occurence_list[i]/suma*100)
         for i in range(len(self.log)):
-            print self.log[i]
+            print(self.log[i])
         t = self.total_time
-        print
-        print    "  ================================================"
-        print    "  TOTAL TIME:  %d days %d hours %d min %d sec " % ( t/86400,t/3600,t/60,int(t) )
-        print;print
+        print()
+        print(   "  ================================================")
+        print(   "  TOTAL TIME:  %d days %d hours %d min %d sec " % ( t/86400,t/3600,t/60,int(t) ))
+        print();print()
         
 def PRINTL(M,list1="",list2=""):
     """ print helper 2 """
@@ -189,9 +189,9 @@ def PRINTL(M,list1="",list2=""):
            for u in range(len(m)):
              for i in range(len(transpose(m))):
                v = "%12.5f" % m[u][i]
-               print "%14s" % v.rjust(14),
-             print
-           print
+               print("%14s" % v.rjust(14), end="")
+             print()
+           print()
 
     elif list2 == '':
 
@@ -205,19 +205,19 @@ def PRINTL(M,list1="",list2=""):
 
            for i in range(len(l1)):
                t = "%s" % l1[i]
-               print "%10s" % t.rjust(10),
-           print
+               print("%10s" % t.rjust(10), end="")
+           print()
            for i in range(len(l1)):
                kk = '-'*8
-               print "%s" % kk.rjust(10),
-           print
+               print("%s" % kk.rjust(10), end="")
+           print()
 
            for u in range(len(m)):
              for i in range(len(transpose(m))):
                v = "%.6e" % m[u][i]
-               print "%10s" % v.rjust(10),
-             print
-           print
+               print("%10s" % v.rjust(10), end="")
+             print()
+           print()
 
     else:
 
@@ -233,23 +233,23 @@ def PRINTL(M,list1="",list2=""):
 
            for i in range(len(l1)):
                t1 = "%s" % l1[i]
-               print "%15s" % t1.rjust(15),
-           print
+               print("%15s" % t1.rjust(15), end="")
+           print()
            for i in range(len(l1)):
                t2 = "%s" % l2[i]
-               print "%15s" % t2.rjust(15),
-           print
+               print("%15s" % t2.rjust(15), end="")
+           print()
            for i in range(len(l1)):
                kk = '-'*13
-               print "%s" % kk.rjust(15),
-           print
+               print("%s" % kk.rjust(15), end="")
+           print()
 
            for u in range(len(m)):
              for i in range(len(transpose(m))):
                v = "%.6e" % m[u][i]
-               print "%15s" % v.rjust(15),
-             print
-           print
+               print("%15s" % v.rjust(15), end="")
+             print()
+           print()
            
            
            

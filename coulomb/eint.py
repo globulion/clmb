@@ -89,8 +89,8 @@ a.u. as well. Remember to convert CAMMs to traceless form!
     qH = 0 ; Hq = 0
     #
     Tensordot = numpy.tensordot
-    for i in xrange(len(Ra)):
-         for j in xrange(len(Rb)):
+    for i in range(len(Ra)):
+         for j in range(len(Rb)):
              R    = Rb[j]-Ra[i]
              Rab=numpy.sqrt(numpy.sum(R**2,axis=0))
              qq  +=   qa[i]*qb[j]/Rab                                                               # qa - qb  | R1

@@ -47,7 +47,7 @@ def Main(argv):
         opts, args = getopt.getopt(argv, "hvf:"       ,
                                         ["help"       ,
                                          "version"    ])
-    except getopt.GetoptError, error: Error()
+    except getopt.GetoptError: Error()
     if not argv: Usage()
     
     for opt, arg in opts:
@@ -61,16 +61,16 @@ def Main(argv):
         
     if args:
        input = args[0]
-       print __doc__
+       print(__doc__)
        DO(input)
        
     # print the input file
     if input:
-       print "\n\n ==================================="
-       print     " ECHO OF INPUT FILE:\n"
+       print("\n\n ===================================")
+       print(" ECHO OF INPUT FILE:\n")
        for line in open(input).readlines():
-           print ' >> INPUT CARD: ', line,
-       print
+           print(' >> INPUT CARD: ', line, end="")
+       print()
 
 
 # ----------------- #

@@ -11,9 +11,9 @@ import sys
 
 def check_python_version():
     python_version = sys.version_info
-    print " Python version is ", python_version[:3]
+    print(" Python version is ", python_version[:3])
     if not python_version[:2] in [(2, 7), (2, 6)]: 
-       print " VersionError: Coulomb requires Python 2.6 or Python 2.7!"
+       print(" VersionError: Coulomb requires Python 2.6 or Python 2.7!")
        sys.exit(-1)
     return
 
@@ -35,7 +35,7 @@ def Main(argv):
                    'Topic :: Software Development :: Libraries :: Python Modules',
                    ]
     extensions  = []
-    print " Installing has started!"
+    print(" Installing has started!")
     setup(name                         =  'Coulomb_t'  , 
           version                      =  '0.0.0'     ,
           description                  =  'The program for electrostatic quantum chemistry computations' ,

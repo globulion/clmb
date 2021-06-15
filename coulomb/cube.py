@@ -36,7 +36,7 @@ class CUBFLE:
 
   int = a.integrate(rule='simple')
 
-  print a
+  print(a)
 
  Notes:
   
@@ -224,17 +224,17 @@ class CUBFLE:
       def _write_cube(self, name, misc, N_atoms, origin, dimensions, spacings, coord, data):
           """Write cube file from external source"""
           out = open(name,'w')
-          print >> out, " File: %s\n %s" % (name, misc)
-          print >> out, "%5d" % N_atoms, 
-          print >> out, 3*"%11.6f " % tuple(origin)
+          print(" File: %s\n %s" % (name, misc), file=out)
+          print("%5d" % N_atoms, file=out)
+          print(3*"%11.6f " % tuple(origin), file=out)
           for i in range(3):
-              print >> out, "%5d" % dimensions[i],
-              print >> out, 3*"%11.6f " % tuple(spacings[i])
+              print("%5d" % dimensions[i], file=out)
+              print(3*"%11.6f " % tuple(spacings[i]), file=out)
           for i in range(N_atoms):
-              print >> out, "%5d" % coord[i][0],
+              print("%5d" % coord[i][0], file=out)
               for c in range(len(coord[0])-1):
-                  print >> out, "%11.6f" % coord[i][c+1],
-              print >> out
+                  print("%11.6f" % coord[i][c+1], file=out)
+              print("\n", file=out)
 
           k = 1
           d = dimensions[2]
@@ -252,7 +252,7 @@ class CUBFLE:
               elif (k%6==0 and k%d==0):
                     log+="%13.5E\n" % data[i]
                     k=1
-          print >> out, log
+          print(log, file=out)
           out.close()
           return
         
@@ -296,8 +296,8 @@ class QMMap(CUBFLE):
      a.eval('dens')
      a.write('map.cube', misc='My first QMMap')
 
-     print a.npoints
-     print a.h  # increment in the grid
+     print(a.npoints)
+     print(a.h) # increment in the grid
 
  III. ARGUMENTS.
      

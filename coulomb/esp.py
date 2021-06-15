@@ -35,7 +35,7 @@ verify the quality of charge fitting. All values in AU."""
           self.fit_atoms_idx = arange(self.N_at)
           self.N_fit_atoms   = self.N_at
           self.RArray_fit = self.RArray
-       print " NUMBER OF FITTED CHARGES: %d\n NUMBER OF MPOINTS       : %d\n" % ( self.N_fit_atoms, self.mpot )
+       print(" NUMBER OF FITTED CHARGES: %d\n NUMBER OF MPOINTS       : %d\n" % ( self.N_fit_atoms, self.mpot ))
        self.pot = pot
        # box padding
        self.pad = pad
@@ -79,7 +79,7 @@ verify the quality of charge fitting. All values in AU."""
        
        # derive potential from CAMMs
        if   self.pot.lower()=='camm':
-            print " CALCULATION OF ELECTROSTATIC POTENTIAL FROM CAMM"
+            print(" CALCULATION OF ELECTROSTATIC POTENTIAL FROM CAMM")
             camm = MULTIP(self.molecule,self.basis,self.method,
                           matrix=self.matrix,multInts=self.multInts,
                           transition=self.transition)
@@ -91,11 +91,11 @@ verify the quality of charge fitting. All values in AU."""
                 self.VArray[i,3] = Vr_camms(camm,self.VArray[i,:3]) 
             self.clock.actualize('potential from CAMMs')
        elif self.pot.lower()=='wfn':
-            print " CALCULATION OF EXACT ELECTROSTATIC POTENTIAL FROM WFN"
+            print(" CALCULATION OF EXACT ELECTROSTATIC POTENTIAL FROM WFN")
             for i in range(self.mpot):
                 self.VArray[i,3] = Vr_wfn_1(self.molecule,self.bfs,self.P,self.VArray[i,:3])
             self.clock.actualize('potential from wave function')
-       else:print "\nnot yet written. Quitting COULOMB.py ...\n"; exit()
+       else:print("\nnot yet written. Quitting COULOMB.py ...\n"); exit()
 
    def CalcPot_from_charges(self):
        """calculates the potential from fitted charges"""
@@ -232,4 +232,4 @@ verify the quality of charge fitting. All values in AU."""
        plt.show()
        log = '\n --- STATISTICAL EVALUATION OF THE FITTING QUALITY ---\n'
        log+= '\nnot yet written\n'
-       print log 
+       print(log)

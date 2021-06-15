@@ -95,7 +95,7 @@ class START:
   @staticmethod
   def start():
    if not START.a:
-     print "Wykonuję się tylko JEDEN raz i ustawiam a na 1!"
+     print("Wykonuję się tylko JEDEN raz i ustawiam a na 1!")
      START.a = 1
      
 class run:
@@ -106,7 +106,7 @@ class run:
   @staticmethod
   def run(molecule,basis,method,matrix=None,multInts=None):
    if not run.start: 
-     print "Calculating basic variables"
+     print("Calculating basic variables")
      # start measuring time of action
      run.clock = TIMER()
      # molecule
@@ -154,6 +154,6 @@ class run:
 
      run.start = True
    else:
-     print "Copying the basic variables from singleton object"
+     print("Copying the basic variables from singleton object")
 
 

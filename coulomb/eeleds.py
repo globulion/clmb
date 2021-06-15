@@ -53,13 +53,13 @@ class EELEDS:
        y = input("Basis size: %d basis functions.\nTwo-electron integrals will need roughly %4.1f mb.\nWant to continue? (1/0)\n" % (len(DCBS),(len(DCBS)**4)*8/1048576.))
        if not y: exit()
        if self.exchange and not self.transition:
-           print "Exchange term is implemented only for transition densities"
+           print("Exchange term is implemented only for transition densities")
            self.exchange = False  
        if self.transition and 'NoneType' in str(type(matrixa)):
-           print "Transition densities were not provided in the input file. Error termination."
+           print("Transition densities were not provided in the input file. Error termination.")
            exit()
        if not self.transition and not 'NoneType' in str(type(matrixa)):
-           print "Transition densities are to be read but the trans keyword is not set in input. Error termination."
+           print("Transition densities are to be read but the trans keyword is not set in input. Error termination.")
            exit()
 
        if 'NoneType' in str(type(matrixa)):
@@ -119,13 +119,13 @@ class EELEDS:
         D1d = reshape(D,(nbf*nbf,)) #1D version of Dens
         J = zeros((nbf,nbf),'d')
 
-        for i in xrange(nbf):
-            for j in xrange(i+1):
+        for i in range(nbf):
+            for j in range(i+1):
 
                 temp = zeros(nbf*nbf,'d')
                 ij = i*(i+1)/2+j
-                for k in xrange(nbf):
-                    for l in xrange(k+1):
+                for k in range(nbf):
+                    for l in range(k+1):
                         kl = k*nbf+l
                         lk = l*nbf+k
                         temp[kl] = coulomb(bfs[i],bfs[j], bfs[k],bfs[l])
@@ -140,14 +140,14 @@ class EELEDS:
         nbf = D.shape[0]
         D1d = reshape(D,(nbf*nbf,)) #1D version of Dens
         J = zeros((nbf,nbf),'d')
-        for i in xrange(nbf):
-            for j in xrange(i+1):
+        for i in range(nbf):
+            for j in range(i+1):
 
                 temp = zeros(nbf*nbf,'d')
                 kl = 0
                 ij = i*(i+1)/2+j
-                for k in xrange(nbf):
-                    for l in xrange(nbf):
+                for k in range(nbf):
+                    for l in range(nbf):
                         temp[kl] = coulomb(bfs[i],bfs[j], bfs[k],bfs[l])
                         kl += 1
 
@@ -221,8 +221,8 @@ class EELEDS:
           
        K = len(bfs_A)
        V = zeros((K,K),dtype=float64)
-       for i in xrange(K):
-           for j in xrange(K):
+       for i in range(K):
+           for j in range(K):
                for atom in mol_B.atoms:
                    V[i,j]+= atom.atno* bfs_A[i].nuclear(bfs_A[j],atom.pos())
        return V

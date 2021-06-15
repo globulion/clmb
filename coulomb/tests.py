@@ -8,7 +8,7 @@ def cube_test():
     """testy cubów"""
     dc1 = CUBFLE('da.cube')
     dc2 = CUBFLE('cat.cube')
-    print Eeldc(dc1,dc2)
+    print(Eeldc(dc1,dc2))
     pass
 def i():
  """testy"""
@@ -103,7 +103,7 @@ units='Angstrom')
  mol2 = h2
 # r=DFI(h2,basis,method,h2o,basis,method,conv=1e-10)
  r = EELEDS(mol1,mol2,basis,'HF',Exchange=False)
- print 
+ print()
  #
  t1 = MULTIP(mol1,basis,'HF')
  t1.camms()
@@ -111,8 +111,8 @@ units='Angstrom')
  t2 = MULTIP(mol2,basis,'HF')
  t2.camms()
  t2.makeTracelessCAMMs() 
- print Eelcamm(t2,t1)
- print Eelcamm(t1,t2)
+ print(Eelcamm(t2,t1))
+ print(Eelcamm(t1,t2))
  #p1=read_matrix('gaussian',argv[1],'Beta transition density to state',1)
  #p1+=read_matrix('gaussian',argv[1],'Alpha transition density to state',1)
  #p2=read_matrix('gaussian',argv[2],'Beta transition density to state',1)

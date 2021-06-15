@@ -98,33 +98,33 @@ class DO(PARSER):
            data from PARSER class object."""
            
         if method.lower() == 'camm': 
-           print "\n   ------------------------"
-           print   "   CAMMS ESTIMATION ROUTINE"
-           print   "   ------------------------\n\n\n\n"
-           print MULTIP.__printCAMMs__.__doc__
+           print("\n   ------------------------")
+           print(  "   CAMMS ESTIMATION ROUTINE")
+           print(  "   ------------------------\n\n\n\n")
+           print(MULTIP.__printCAMMs__.__doc__)
         elif method.lower() == 'mmm':
-           print "\n   -----------------------"
-           print   "   MMMS ESTIMATION ROUTINE"
-           print   "   -----------------------\n\n\n\n"
-           print MULTIP.__printMMMs__.__doc__
+           print("\n   -----------------------")
+           print(  "   MMMS ESTIMATION ROUTINE")
+           print(  "   -----------------------\n\n\n\n")
+           print(MULTIP.__printMMMs__.__doc__)
         elif method.lower() == 'esp':
-           print "\n   ------------------------------"
-           print   "   ESP CHARGES ESTIMATION ROUTINE"
-           print   "   ------------------------------\n\n\n\n"
+           print("\n   ------------------------------")
+           print(  "   ESP CHARGES ESTIMATION ROUTINE")
+           print(  "   ------------------------------\n\n\n\n")
 
         if method.lower() != 'esp':
           for i, mol in enumerate(self.M):
             log = "      COMPUTATIONS FOR: --- %s ---" % mol.name
-            print "     ","-"*55
-            print log
-            print "     ","-"*55
+            print("     ","-"*55)
+            print(log)
+            print("     ","-"*55)
 
             # determine if bond moments should be computed or not
             if not self.cbamm: self.bond_set[i] = None
 
             # use external multints and density matrix
             try:
-               print " READING EXTERNAL DENSITY MATRIX\n"  # EXTERNAL MULTINTS INTERFACE NOT ADDED YET!
+               print(" READING EXTERNAL DENSITY MATRIX\n") # EXTERNAL MULTINTS INTERFACE NOT ADDED YET!
                result = MULTIP(mol,self.basis,self.method,
                                matrix=self.dmat_set[i],
                                transition=self.transition_set[i],
@@ -132,7 +132,7 @@ class DO(PARSER):
                                hexadecapoles=self.has_hexadecapoles)
             # calculate multints and density matrix using PyQuante
             except IndexError: 
-               print " CALCULATION OF DENSITY MATRIX BY DIRECT SCF (OR INDEX ERROR: CHECK IF SCF WAS NOT CHOSEN)"
+               print(" CALCULATION OF DENSITY MATRIX BY DIRECT SCF (OR INDEX ERROR: CHECK IF SCF WAS NOT CHOSEN)")
                result = MULTIP(mol,self.basis,self.method,
                                transition=self.transition_set[i],
                                bonds=self.bond_set[i],
@@ -155,12 +155,12 @@ class DO(PARSER):
         else:
            for i, mol in enumerate(self.M):
             log = "      COMPUTATIONS FOR: --- %s ---" % mol.name
-            print "     ","-"*55
-            print log
-            print "     ","-"*55            
+            print("     ","-"*55)
+            print(log)
+            print("     ","-"*55)
             # use external multints and density matrix
             try:
-                      print " READING EXTERNAL DENSITY MATRIX\n"  # EXTERNAL MULTINTS INTERFACE NOT ADDED YET!
+                      print(" READING EXTERNAL DENSITY MATRIX\n") # EXTERNAL MULTINTS INTERFACE NOT ADDED YET!
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
@@ -177,10 +177,10 @@ class DO(PARSER):
                       if self.outname is not None:
                          dma.write(self.outname)
                       self.__dma = dma
-                      print result
+                      print(result)
             except IndexError: 
                       
-                      print " CALCULATION OF DENSITY MATRIX BY DIRECT SCF (OR INDEX ERROR: CHECK IF SCF WAS NOT CHOSEN)"
+                      print(" CALCULATION OF DENSITY MATRIX BY DIRECT SCF (OR INDEX ERROR: CHECK IF SCF WAS NOT CHOSEN)")
                       result = ESP(mol,self.basis,self.method,mpot=self.mpot,
                                    pot=self.pot,pad=self.pad,stat=self.stat,SVD=self.svd,
                                    Print=self.Print,
@@ -196,7 +196,7 @@ class DO(PARSER):
                       if self.outname is not None:
                          dma.write(self.outname)
                       self.__dma = dma
-                      print result
+                      print(result)
                                    
     def eint(self,method):
         """performs electrostatic interaction energy 
@@ -205,21 +205,21 @@ class DO(PARSER):
            
         # for CAMM and ESP interaction energy
         if method.lower() == 'camm': 
-           print "\n   -------------------------------------------------------------"
-           print   "   MULTIPOLE PART OF ELECTROSTATIC INTERACTION ENERGY FROM CAMMS"
-           print   "   -------------------------------------------------------------\n\n\n\n"
+           print("\n   -------------------------------------------------------------")
+           print(  "   MULTIPOLE PART OF ELECTROSTATIC INTERACTION ENERGY FROM CAMMS")
+           print(  "   -------------------------------------------------------------\n\n\n\n")
         elif method.lower() == 'esp':
-           print "\n   -----------------------------------------"
-           print   "   ELECTROSTATIC INTERACTION ENERGY FROM ESP"
-           print   "   -----------------------------------------\n\n\n\n"
+           print("\n   -----------------------------------------")
+           print(  "   ELECTROSTATIC INTERACTION ENERGY FROM ESP")
+           print(  "   -----------------------------------------\n\n\n\n")
 
         if method.lower()=='esp' or method.lower()=='camm':
            results = []
            for i,mol in enumerate(self.M):
               text = "      COMPUTATIONS FOR: --- %s ---" % mol.name
-              print "     ","-"*55
-              print text
-              print "     ","-"*55
+              print("     ","-"*55)
+              print(text)
+              print("     ","-"*55)
               if method.lower() == 'camm':
                    # use external multints and density matrix
                    try:
@@ -259,22 +259,22 @@ class DO(PARSER):
            if  method.lower() == 'camm':
                etext = 'DE(EL,MTP,CAMM)'
                Eint = Eelcamm(results[0],results[1])
-               print Eelcamm.log
+               print(Eelcamm.log)
            elif method.lower() == 'esp':
                etext = 'DE(EL,ESP)'
                Eint = EelESP(results[0],results[1])      
 
-           print 
-           print " %s = %12.8f [CM-1]" % (etext,Eint*UNITS.HartreeToCmRec)
-           print
+           print()
+           print(" %s = %12.8f [CM-1]" % (etext,Eint*UNITS.HartreeToCmRec))
+           print()
            results[1].clock.actualize('%s interaction energy' % etext)
            results[1].clock.__print__()
          
         # for EEL EDS interaction energy
         if method.lower() == 'eeleds':
-           print "\n   -----------------------------------------"
-           print   "   ELECTROSTATIC INTERACTION ENERGY FROM EDS"
-           print   "   -----------------------------------------\n\n\n\n"
+           print("\n   -----------------------------------------")
+           print(  "   ELECTROSTATIC INTERACTION ENERGY FROM EDS")
+           print(  "   -----------------------------------------\n\n\n\n")
            try:
               result = EELEDS(self.M[0],self.M[1],
                          self.basis,self.method,
@@ -287,7 +287,7 @@ class DO(PARSER):
                          self.basis,self.method,
                          transition=self.transition_set[0],
                          exchange=self.exchange)
-           print result
+           print(result)
 
     def search(self,task,dtype=str):
         """Withdraws the subtask. Format in the input file:
@@ -299,6 +299,6 @@ TASK=subtask1,subtask2[,...]"""
              elif t[0].lower() == 'false': return False
              elif t[0].lower() == '1'    : return True
              elif t[0].lower() == '0'    : return False
-             else: raise ValueError, "Incorrect value for task %s" % task
+             else: raise ValueError("Incorrect value for task %s" % task)
 
 

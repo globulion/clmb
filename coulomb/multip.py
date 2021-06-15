@@ -83,7 +83,7 @@ USAGE:
         """calculate LMO centroids"""
         nmos = len(self.vec)
         centroids = numpy.zeros((nmos,3),dtype=numpy.float64)
-        for LMO in xrange(nmos):
+        for LMO in range(nmos):
             centroids[LMO] = numpy.tensordot( self.vec[LMO], numpy.tensordot(self.vec[LMO],
                                                                  self.D,(0,1)), (0,1))
         return centroids
@@ -128,7 +128,7 @@ USAGE:
                Hex.append(HA)
             
         # electronic moments
-        for LMO in xrange(nmos):
+        for LMO in range(nmos):
             A = self.vec[LMO]
             chr = - 2* numpy.tensordot( A, numpy.tensordot(A, self.S,(0,0)), (0,0))
             dip = - 2* numpy.tensordot( A, numpy.tensordot(A, self.D,(0,1)), (0,1))
@@ -183,9 +183,9 @@ USAGE:
             if self.has_hexadecapoles:
                HA = qA * numpy.outer(R,RRR).reshape(3,3,3,3)
           
-            for I in xrange(self.K):
+            for I in range(self.K):
                 i = self.LIST1[I]
-                for J in xrange(self.K):
+                for J in range(self.K):
                     j =  self.LIST1[J]
                     if ((i==n==j) or ((i==n and j!=i) and (not self.__IJ_are_bonded(i,j))) ):
                        qA -= self.P[I,J] * self.S[I,J]
@@ -231,8 +231,8 @@ USAGE:
         #       HB.update({bond:numpy.zeros((3,3,3,3),dtype=numpy.float64)})
         #
         for bond in self.bonds:
-            for I in xrange(self.K):
-                for J in xrange(self.K):
+            for I in range(self.K):
+                for J in range(self.K):
                     i = self.LIST1[I]
                     j = self.LIST1[J]
                     if ((i,j) == bond or (j,i)==bond):
@@ -287,9 +287,9 @@ USAGE:
                if self.has_hexadecapoles:
                   H = numpy.zeros((3,3,3,3),dtype=numpy.float64)
                R = numpy.array(atom.pos()) 
-               for I in xrange(self.K):
+               for I in range(self.K):
                    if self.LIST1[I]==n:
-                      for J in xrange(self.K):
+                      for J in range(self.K):
                           q -= self.P[I,J] * self.S[I,J]
                           M += self.P[I,J] * ( self.S[I,J] * R - self.D[:,I,J] )
                           for i in [0,1,2]:
@@ -358,10 +358,10 @@ USAGE:
                 if self.has_hexadecapoles:
                    HA = qA * numpy.outer(R,RRR).reshape(3,3,3,3)
 
-                for I in xrange(self.K):
+                for I in range(self.K):
                     i = self.LIST1[I]
                     if i==n:
-                       for J in xrange(self.K): 
+                       for J in range(self.K): 
                            j =  self.LIST1[J]
 
                            qA -= self.P[I,J] * self.S[I,J]
@@ -541,8 +541,8 @@ basing on the self.bonds list of bonds.
                Mu+= atom.atno*numpy.array(atom.pos())
         # electronic contribution
         #Mu[:] -= self.P * self.D[:]
-        for a in xrange(self.K):
-            for b in xrange(self.K):
+        for a in range(self.K):
+            for b in range(self.K):
                 Mu[0]-= self.P[a,b] * self.D[0,a,b]
                 Mu[1]-= self.P[a,b] * self.D[1,a,b]
                 Mu[2]-= self.P[a,b] * self.D[2,a,b]
@@ -561,8 +561,8 @@ basing on the self.bonds list of bonds.
                    for j in [0,1,2]:
                        Quad[i,j] += Z*R[i]*R[j]
         # electronic contribution
-        for a in xrange(self.K):
-            for b in xrange(self.K):  
+        for a in range(self.K):
+            for b in range(self.K):  
                 for i in [0,1,2]:
                     for j in [0,1,2]:
                         Quad[i,j] -= self.P[a,b] * self.Q[i,j,a,b]
@@ -582,8 +582,8 @@ basing on the self.bonds list of bonds.
                        for k in [0,1,2]:
                            Oct[i,j,k] += Z*R[i]*R[j]*R[k]
         # electronic contribution
-        for a in xrange(self.K):
-            for b in xrange(self.K):  
+        for a in range(self.K):
+            for b in range(self.K):  
                 for i in [0,1,2]:
                     for j in [0,1,2]:
                         for k in [0,1,2]:
@@ -606,8 +606,8 @@ basing on the self.bonds list of bonds.
                            for l in [0,1,2]:
                                Hex[i,j,k,l] += Z*R[i]*R[j]*R[k]*R[l]
         # electronic contribution
-        for a in xrange(self.K):
-            for b in xrange(self.K):  
+        for a in range(self.K):
+            for b in range(self.K):  
                 for i in [0,1,2]:
                     for j in [0,1,2]:
                         for k in [0,1,2]:
@@ -721,7 +721,6 @@ where
                              O[i,j,k]-= (1./2.) * Wt[i]
         # Hexadecapole moment
         if self.has_hexadecapoles:
-           #raise NotImplementedError, 'traceless hexadecapoles are not implemented yet!'
            for H in self.Hex:
                W = H.copy()
                H *= (35./8.)
@@ -809,7 +808,7 @@ where
         log+= "           --------------- \n\n"
         log+= _oct_
  
-        print log
+        print(log)
 
     def __printCAMMs__(self):   # old printout form
         """
@@ -880,7 +879,7 @@ where
         log+= " \n" 
 
   
-        print log
+        print(log)
 
     def __repr__(self):
         """new printout form"""
